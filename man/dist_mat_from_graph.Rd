@@ -4,7 +4,7 @@
 \alias{dist_mat_from_graph}
 \title{Compute Distance Matrix from Graph}
 \usage{
-dist_mat_from_graph(graph_df, directed = FALSE, algorithm = "mch", ...)
+dist_mat_from_graph(graph_df, directed = FALSE, ...)
 }
 \arguments{
 \item{graph_df}{A data frame representing a graph with columns:
@@ -13,11 +13,11 @@ dist_mat_from_graph(graph_df, directed = FALSE, algorithm = "mch", ...)
 \item{directed}{Logical (default: FALSE). If TRUE, treats the graph as directed;
 if FALSE, treats it as undirected.}
 
+\item{...}{Additional arguments passed to \code{get_distance_matrix}.}
+
 \item{algorithm}{Character string (default: "mch"). Algorithm to use for distance
 computation. Options include "mch" (many-to-many with contraction hierarchies),
 "dijkstra", "bi", etc. See \code{cppRouting::get_distance_matrix} for details.}
-
-\item{...}{Additional arguments passed to \code{get_distance_matrix}.}
 }
 \value{
 A matrix of distances between all node pairs, where rows and columns

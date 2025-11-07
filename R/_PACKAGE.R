@@ -38,7 +38,6 @@
 #' }
 #'
 #' @author Kamol Roy \email{kamol.roy08@gmail.com}
-#' @docType package
 #' @name mmflowr-package
 #' @aliases mmflowr
 NULL

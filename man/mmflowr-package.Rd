@@ -3,19 +3,41 @@
 \name{mmflowr-package}
 \alias{mmflowr-package}
 \alias{mmflowr}
-\title{MMFlowR: Transportation Modeling Package}
+\title{Transportation Network Modeling}
 \description{
-MMFlowR is an R package for transportation modeling, specifically designed for enumeration
-and assignment tasks in network analysis. It provides tools for analyzing traffic flow,
-route optimization, and transportation network modeling.
+*mmflowr* provides efficient tools for transportation network modeling, specifically designed
+for enumeration and assignment tasks. The package implements path-sized logit models for
+traffic assignment and provides utilities for network processing, graph conversion, and
+spatial calculations.
 
-The package uses the following backends:
+**Network Processing**
+
+ \code{\link[=linestring_to_graph]{linestring_to_graph()}} --- Convert LINESTRING geometries to graph representation\cr
+ \code{\link[=create_undirected_graph]{create_undirected_graph()}} --- Convert directed graph to undirected\cr
+ \code{\link[=nodes_from_graph]{nodes_from_graph()}} --- Extract unique nodes from graph\cr
+ \code{\link[=simplify_network]{simplify_network()}} --- Simplify network by keeping only traversed edges\cr
+
+**Traffic Assignment**
+
+ \code{\link[=run_assignment]{run_assignment()}} --- Run traffic assignment using path-sized logit model\cr
+ \code{\link[=check_path_duplicates]{check_path_duplicates()}} --- Check for duplicate edges in paths\cr
+ \code{\link[=compute_path_sized_logit]{compute_path_sized_logit()}} --- Compute path-sized logit probabilities and flows\cr
+
+**OD Matrix Processing**
+
+ \code{\link[=process_od_matrix]{process_od_matrix()}} --- Process OD matrix files from directory\cr
+
+**Graph Utilities**
+
+ \code{\link[=dist_mat_from_graph]{dist_mat_from_graph()}} --- Compute distance matrix from graph\cr
+}
+\details{
+The package uses efficient C implementations for critical path operations and leverages:
 \itemize{
   \item \code{collapse} - Fast data transformations
-  \item \code{data.table} - Efficient data manipulation
-  \item \code{cppRouting} - Graph operations and routing
-  \item \code{igraph} - Additional graph operations
+  \item \code{igraph} - Graph operations and shortest path algorithms
   \item \code{sf} - Spatial data handling
+  \item \code{data.table} - Efficient data manipulation
 }
 }
 \author{

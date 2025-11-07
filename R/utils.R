@@ -50,7 +50,8 @@ process_od_matrix <- function(od_matrix_directory, cargo_type, period = NULL) {
 #' }
 #' @export
 #' @importFrom sf st_geometry_type st_coordinates
-#' @importFrom collapse qDF GRP add_vars fselect ffirst flast add_stub fmutate group fmatch fifelse %+=% fmax colorder
+#' @importFrom collapse qDF GRP add_vars fselect ffirst flast add_stub fmutate group fmatch %+=% fmax colorder
+#' @importFrom data.table fifelse
 linestring_to_graph <- function(lines, digits = 6) {
   gt <- st_geometry_type(lines, by_geometry = FALSE)
   if(length(gt) != 1L || gt != "LINESTRING") stop("lines needs to be a sf data frame of LINESTRING's")
