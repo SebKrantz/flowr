@@ -3,32 +3,58 @@
 #' Functions for assigning traffic to routes using nested logit models.
 
 
-#' @title Run Assignment
-#' @description Run traffic assignment for the network.
+#' @title Run Traffic Assignment
+#' @description Assign traffic flows to network edges using path-sized logit (PSL) model.
 #'
-#' @param network Character string specifying the network name.
-#' @param scenario Character string specifying the scenario name.
-#' @param year Character string specifying the analysis year (e.g., "2040").
-#' @param enumeration_run_directory Optional character string path to enumeration results directory.
-#'   If not provided, will use the most recent enumeration run.
-#' @param cargo_type_map Optional named character vector mapping from OD matrix cargo types
-#'   to enumeration cargo types. Defaults to common mappings (Container->Containerized, etc.).
+#' @param graph_df A data.frame with columns \code{from}, \code{to}, and optionally a cost column.
+#'   Represents the network graph with edges between nodes.
+#' @param od_matrix_long A data.frame with columns \code{from}, \code{to}, and \code{flow}.
+#'   Represents the origin-destination matrix in long format with flow values.
+#' @param directed Logical (default: FALSE). Whether the graph is directed. Currently only
+#'   undirected graphs are supported.
+#' @param cost_col Character string (default: "cost") or numeric vector. Name of the cost column
+#'   in \code{graph_df}, or a numeric vector of edge costs with length equal to \code{nrow(graph_df)}.
+#' @param mode_col Character string (optional). Currently not used.
+#' @param method Character string (default: "PSL"). Assignment method. Currently only "PSL"
+#'   (Path-Sized Logit) is implemented.
+#' @param lambda Numeric (default: -1). Currently not used.
+#' @param beta Numeric (default: -1). Path-sized logit parameter (beta_PSL). If -1, uses a default value.
+#' @param return.extra Character vector specifying additional results to return. Options include:
+#'   \code{"graph_df"}, \code{"od_matrix_long"}, \code{"dmat"}, \code{"paths"}, \code{"edges"},
+#'   \code{"costs"}, \code{"weights"}. Use \code{"all"} to return all available extra results.
+#'   Default: \code{c("graph_df", "od_matrix_long", "paths", "edges", "costs", "weights")}.
+#'
+#' @return A list containing:
+#'   \itemize{
+#'     \item \code{call} - The function call
+#'     \item \code{final_flows} - Numeric vector of assigned flows for each edge (if \code{graph_df}
+#'       is not in \code{return.extra})
+#'     \item Additional elements as specified in \code{return.extra}
+#'   }
 #'
 #' @details
-#' This function:
+#' This function performs traffic assignment using a path-sized logit model:
 #' \itemize{
-#'   \item Loads network, zone nodes, OD matrix, and choice parameters
-#'   \item Loads alternative routes from enumeration results
-#'   \item Calculates tonnage assignment using nested logit model
-#'   \item Aggregates results by link and direction
-#'   \item Saves results as shapefile
+#'   \item Creates an undirected graph from \code{graph_df} using igraph
+#'   \item Computes shortest path distance matrix for all node pairs
+#'   \item For each origin-destination pair in \code{od_matrix_long}:
+#'     \itemize{
+#'       \item Identifies alternative routes (detours) that are within 10\% of shortest path cost
+#'       \item Finds shortest paths from origin to intermediate nodes and from intermediate nodes to destination
+#'       \item Filters paths to remove those with duplicate edges
+#'       \item Computes path-sized logit probabilities accounting for route overlap
+#'       \item Assigns flows to edges based on probabilities
+#'     }
+#'   \item Returns results including final flows and optionally additional information
 #' }
 #'
-#' @return Invisibly returns NULL. Results are saved to the assignment results directory.
+#' The path-sized logit model accounts for route overlap by adjusting probabilities based on
+#' the number of alternative routes using each edge. Flows are assigned proportionally to
+#' the computed probabilities.
 #'
 #' @export
-#' @importFrom data.table data.table
-#' @importFrom sf st_write
+#' @importFrom collapse fselect fnrow fsubset
+#' @importFrom igraph graph_from_data_frame delete_vertex_attr igraph_options distances shortest_paths
 run_assignment <- function(graph_df, od_matrix_long, directed = FALSE,
                            cost_col = "cost", mode_col = NULL,
                            method = "PSL", lambda = -1, beta = -1,
