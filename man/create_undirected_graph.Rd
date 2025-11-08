@@ -4,7 +4,7 @@
 \alias{create_undirected_graph}
 \title{Create Undirected Graph}
 \usage{
-create_undirected_graph(graph_df, agg_cols = "cost", agg_func = fmean)
+create_undirected_graph(graph_df, agg_cols = "cost", agg_func = fmean, ...)
 }
 \arguments{
 \item{graph_df}{A data frame representing a directed graph with columns:

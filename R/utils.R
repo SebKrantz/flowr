@@ -105,11 +105,17 @@ linestring_to_graph <- function(lines, digits = 6) {
 #'
 #' @export
 #' @importFrom collapse ftransform collap ffirst fmean
-create_undirected_graph <- function(graph_df, agg_cols = "cost", agg_func = fmean) {
-  graph_df |>
-    ftransform(from = pmin(from, to), to = pmax(from, to)) |>
-    collap( ~ from + to, custom = list(c("line", "FX", "FY", "TX", "TY"), agg_cols) |>
-              setNames(c("ffirst", deparse(substitute(agg_func)))), sort = FALSE)
+create_undirected_graph <- function(graph_df, agg_cols = "cost", agg_func = fmean, ...) {
+  graph_df %<>% ftransform(from = pmin(from, to), to = pmax(from, to))
+  g <- GRP(graph_df, ~ from + to, sort = FALSE)
+  if(last(as.character(substitute(agg_func))) %!in% .FAST_STAT_FUN)
+    agg_func <- function(x, g, ...) BY(x, g, agg_func, ...)
+  res <- add_vars(g$groups,
+    ffirst(get_vars(graph_df, c("line", "FX", "FY", "TX", "TY")), g, use.g.names = FALSE),
+    agg_func(get_vars(graph_df, agg_cols), g, use.g.names = FALSE)) |>
+    colorderv(c("line", "from", "FX", "FY", "to", "TX", "TY", agg_cols))
+  attr(res, "group.starts") <- g$group.starts
+  res
 }
 
 #' @title Extract Nodes from Graph
@@ -231,8 +237,8 @@ check_path_duplicates <- function(paths1, paths2, delta_ks) {
 #'
 #' @useDynLib mmflowr, .registration = TRUE
 compute_path_sized_logit <- function(paths1, paths2, no_dups, shortest_path,
-                                     cost, cost_ks, d_ij, beta_PSL, flow,
-                                     delta_ks, final_flows) {
+                                     cost, cost_ks, d_ij, beta_PSL,
+                                     flow, delta_ks, final_flows) {
   .Call(C_compute_path_sized_logit, paths1, paths2, no_dups, shortest_path,
         cost, cost_ks, d_ij, beta_PSL, flow, delta_ks, final_flows)
 }
@@ -284,8 +290,9 @@ simplify_network <- function(x, od_matrix_long, cost_col = NULL) {
   } else if (all(c("from", "to") %in% names(x))) graph_df <- x
   else stop("x must be a linestring sf object or a graph data.frame with 'from' and 'to' columns")
 
-  g <- graph_df |> fselect(from, to) |> graph_from_data_frame(directed = FALSE)
-  g <- delete_vertex_attr(g, "name")
+  g <- graph_df |> fselect(from, to) |>
+    graph_from_data_frame(directed = FALSE) |>
+    delete_vertex_attr("name")
   iopt <- igraph_options(return.vs.es = FALSE) # sparsematrices = TRUE
   on.exit(igraph_options(iopt))
 
@@ -310,9 +317,6 @@ simplify_network <- function(x, od_matrix_long, cost_col = NULL) {
   }
   graph_df |> ss(edges_traversed > 0)
 }
-
-
-
 
 
 
