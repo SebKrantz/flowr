@@ -1,7 +1,3 @@
-#' Traffic Assignment Functions
-#'
-#' Functions for assigning traffic to routes using nested logit models.
-
 
 #' @title Run Traffic Assignment
 #' @description Assign traffic flows to network edges using path-sized logit (PSL) model.
@@ -11,16 +7,18 @@
 #' @param od_matrix_long A data.frame with columns \code{from}, \code{to}, and \code{flow}.
 #'   Represents the origin-destination matrix in long format with flow values.
 #' @param directed Logical (default: FALSE). Whether the graph is directed.
-#' @param cost_col Character string (default: "cost") or numeric vector. Name of the cost column
+#' @param cost.column Character string (default: "cost") or numeric vector. Name of the cost column
 #'   in \code{graph_df}, or a numeric vector of edge costs with length equal to \code{nrow(graph_df)}.
-#' @param mode_col Character string (optional). Currently not used.
 #' @param method Character string (default: "PSL"). Assignment method. Currently only "PSL"
 #'   (Path-Sized Logit) is implemented.
-#' @param beta Numeric (default: -1). Path-sized logit parameter (beta_PSL). If -1, uses a default value.
+#' @param beta Numeric (default: -1). Path-sized logit parameter (beta_PSL).
+#' @param detour.max Numeric (default: 1.5). Maximum detour factor for alternative routes (applied to shortest paths cost and used to discard too long alternative routes). This is a key parameter controlling the execution time of the algorithm: considering more routes (higher \code{detour.max}) substantially increases computation time.
+#' @param angle.max Numeric (default: 90). Maximum detour angle (in degrees, two sided). I.e., nodes not within this angle measured against a straight line from origin to destination node will not be considered for detours.
 #' @param return.extra Character vector specifying additional results to return. Options include:
 #'   \code{"graph_df"}, \code{"od_matrix_long"}, \code{"dmat"}, \code{"paths"}, \code{"edges"},
 #'   \code{"costs"}, \code{"weights"}. Use \code{"all"} to return all available extra results.
-#'   Default: \code{c("graph_df", "od_matrix_long", "paths", "edges", "costs", "weights")}.
+#'   Default: \code{c("graph", "paths", "edges", "counts", "costs", "weights")}.
+#' @param precompute.dmat description
 #'
 #' @return A list containing:
 #'   \itemize{
@@ -33,11 +31,11 @@
 #' @details
 #' This function performs traffic assignment using a path-sized logit model:
 #' \itemize{
-#'   \item Creates an undirected graph from \code{graph_df} using igraph
+#'   \item Creates a graph from \code{graph_df} using igraph
 #'   \item Computes shortest path distance matrix for all node pairs
 #'   \item For each origin-destination pair in \code{od_matrix_long}:
 #'     \itemize{
-#'       \item Identifies alternative routes (detours) that are within 10\% of shortest path cost
+#'       \item Identifies alternative routes (detours) that are within \code{detour.max} of shortest path cost
 #'       \item Finds shortest paths from origin to intermediate nodes and from intermediate nodes to destination
 #'       \item Filters paths to remove those with duplicate edges
 #'       \item Computes path-sized logit probabilities accounting for route overlap
@@ -53,75 +51,112 @@
 #' @export
 #' @importFrom collapse fselect fnrow fsubset ckmatch alloc setDimnames anyv
 #' @importFrom igraph graph_from_data_frame delete_vertex_attr igraph_options distances shortest_paths
-run_assignment <- function(graph_df, od_matrix_long, directed = FALSE,
-                           cost_col = "cost", mode_col = NULL,
+run_assignment <- function(graph_df, od_matrix_long,
+                           directed = FALSE,
+                           cost.column = "cost", # mode_col = NULL,
                            method = "PSL", beta = -1,
-                           return.extra = c("graph_df", "od_matrix_long", "paths", "edges", "costs", "weights")) {
+                           detour.max = 1.5,
+                           angle.max = 90,
+                           return.extra = NULL,
+                           precompute.dmat = TRUE) {
 
-  cost <- if(is.character(cost_col) && length(cost_col) == 1L) graph_df[[cost_col]] else
-    if(is.numeric(cost_col) && length(cost_col) == fnrow(graph_df)) cost_col else
-      stop("cost_col needs to be a column name in graph_df or a numeric vector matching nrow(graph_df)")
-
-  # Create Graph igraph: best so far
-  g <- graph_df |> fselect(from, to) |>
-    graph_from_data_frame(directed = directed) |>
-    delete_vertex_attr("name")
-  iopt <- igraph_options(return.vs.es = FALSE) # sparsematrices = TRUE
-  on.exit(igraph_options(iopt))
+  cost <- if(is.character(cost.column) && length(cost.column) == 1L) graph_df[[cost.column]] else
+    if(is.numeric(cost.column) && length(cost.column) == fnrow(graph_df)) cost.column else
+      stop("cost.column needs to be a column name in graph_df or a numeric vector matching nrow(graph_df)")
 
   # Results object
   res <- list(call = match.call())
   if(length(return.extra) == 1L && return.extra == "all")
-    return.extra <- c("graph_df", "od_matrix_long", "dmat", "paths", "edges", "costs", "weights")
+    return.extra <- c("graph", "dmat", "paths", "edges", "costs", "weights")
+
+  # Create Igraph Graph
+  if(!all(c("from", "to") %in% names(graph_df))) stop("graph_df needs to have columns 'from' and 'to'")
+  g <- graph_df |> fselect(from, to) |>
+    graph_from_data_frame(directed = directed)
+  if(anyv(return.extra, "graph")) res$graph <- g
 
   # Distance Matrix
-  dmat <- distances(g, mode = "out", weights = cost)
-  if(!identical(dim(dmat), rep(fnrow(nodes_df), 2))) stop("Nodes and Distance Matrix Mismatch")
-  if(anyv(return.extra, "dmat")) res$dmat <- dmat |> setDimnames(alloc(nodes_df$node, 2))
+  if(precompute.dmat) {
+    dmat <- distances(g, mode = "out", weights = cost)
+    iopt <- igraph_options(return.vs.es = FALSE) # sparsematrices = TRUE
+    on.exit(igraph_options(iopt))
+    if(nrow(dmat) == ncol(dmat)) stop("Distance matrix must be square")
+    if(!all_identical(dimnames(dmat))) stop("Distance matrix dimensions must be equivalent")
+    dmat_rn <- as.integer(rownames(dmat))
+    if(anyv(return.extra, "dmat")) res$dmat <- dmat
+    dimnames(dmat) <- NULL
+  }
+  g %<>% delete_vertex_attr("name")
+
 
   # Edge incidence across selected routes
   delta_ks <- integer(length(cost))
+
   # Final flows vector
   final_flows <- numeric(length(cost))
-  if(anyv(return.extra, "graph_df")) {
-    graph_df$final_fows <- final_fows
-    res$graph_df <- graph_df
-  } else res$final_flows <- final_flows
+  res$final_flows <- final_flows
 
+  # Process/Check OD Matrix
   if(!all(c("from", "to", "flow") %in% names(od_matrix_long))) stop("od_matrix_long needs to have columns 'from', 'to' and 'flow'")
-  od_matrix_long %<>% fsubset(is.finite(flow) & flow > 0)
-  if(anyv(return.extra, "od_matrix_long")) res$od_matrix_long <- od_matrix_long
-  from <- od_matrix_long$from
-  to <- od_matrix_long$to
+  od_pairs <- which(is.finite(od_matrix_long$flow) & od_matrix_long$flow > 0)
+  if(length(od_pairs) != fnrow(od_matrix_long)) {
+    res$od_pairs_used <- od_pairs
+    od_matrix_long %<>% ss(od_pairs, check = FALSE)
+  }
+  from <- ckmatch(od_matrix_long$from, dmat_rn, e = "Unknown origin nodes in od_matrix:")
+  to <- ckmatch(od_matrix_long$to, dmat_rn, e = "Unknown destination nodes in od_matrix:")
   flow <- od_matrix_long$from
-  ckmatch(from, nodes_df$node, e = "Unknown origin nodes:")
-  ckmatch(to, nodes_df$node, e = "Unknown destination nodes:")
 
-  retvals <- any(return.extra %in% c("paths", "edges", "costs", "weights"))
+  # Return block
+  retvals <- any(return.extra %in% c("paths", "edges", "counts", "costs", "weights"))
   if(retvals) {
     if(anyv(return.extra, "paths")) {
       pathsl <- TRUE
-      paths <- vector("list", length(fnrow(od_matrix_long)))
+      paths <- vector("list", length(flow))
     } else pathsl <- FALSE
+    if(anyv(return.extra, "edges")) {
+      edgesl <- TRUE
+      edges <- vector("list", length(flow))
+    } else edgesl <- FALSE
+    if(anyv(return.extra, "counts")) {
+      countsl <- TRUE
+      counts <- vector("list", length(flow))
+    } else countsl <- FALSE
+    if(anyv(return.extra, "costs")) {
+      costsl <- TRUE
+      costs <- vector("list", length(flow))
+    } else costsl <- FALSE
+    if(anyv(return.extra, "weights")) {
+      weightsl <- TRUE
+      weights <- vector("list", length(flow))
+    } else weightsl <- FALSE
   }
   # Now iterating across OD-pairs
   # TODO: could restrict that other nodes must be in the direction of travel and not behind destination node
   for (i in seq_row(od_matrix_long)) {
 
-    d_ij <- dmat[from[i], to[i]] # Shortest path cost
-    d_ikj <- dmat[from[i], ] + dmat[, to[i]] # from i to all other nodes k and from these nodes k to j (basically dmat + t(dmat)?)
-
-    short_detour_ij <- d_ikj < 1.1 * d_ij
-    short_detour_ij[d_ikj <= d_ij + .Machine$double.eps*1e3] <- FALSE # Exclude nodes k that are on the shortest path
+    if(precompute.dmat) {
+      d_ij <- dmat[from[i], to[i]] # Shortest path cost
+      d_ikj <- dmat[from[i], ] + dmat[, to[i]] # from i to all other nodes k and from these nodes k to j (basically dmat + t(dmat)?)
+    } else {
+      d_ij <- get_distance_pair(g, from = from[i], to = to[i], weights = cost)
+      d_ikj <- get_distance_matrix(g, from = from[i], to = dmat_rn, weights = cost) +
+               get_distance_matrix(g, from = dmat_rn, to = to[i], weights = cost)
+    }
+    short_detour_ij <- d_ikj < detour.max * d_ij
+    short_detour_ij[d_ikj < d_ij + .Machine$double.eps*1e3] <- FALSE # Exclude nodes k that are on the shortest path
     # which(d_ij == d_ikj) # These are the nodes on the direct path from i to j which yield the shortest distance.
     ks <- which(short_detour_ij)
     cost_ks <- d_ikj[ks]
-    # Now Path-Sized Logit: Need to compute overlap between routes
-    # Could still optimize calls to shortest_paths(), e.g., go to C directly.
+    ks <- dmat_rn[ks]
+
     # We add the shortest path at the end of paths1
-    paths1 <- shortest_paths(g, from = from[i], to = c(ks, to[i]), weights = cost, output = "epath")$epath
+    # TODO: Could still optimize calls to shortest_paths(), e.g., go to C directly.
+    paths1 <- shortest_paths(g, from = from[i], to = c(ks, to[i]),
+                             weights = cost, output = "epath")$epath
     # TODO: What if we have directed graph
-    paths2 <- shortest_paths(g, from = to[i], to = ks, weights = cost, output = "epath")$epath
+    paths2 <- shortest_paths(g, from = to[i], to = ks,
+                             weights = cost, output = "epath")$epath
     shortest_path <- paths1[[length(paths1)]]
 
     # # Check
@@ -130,6 +165,7 @@ run_assignment <- function(graph_df, od_matrix_long, directed = FALSE,
     # Get indices of paths that do not contain duplicate edges
     no_dups <- check_path_duplicates(paths1, paths2, delta_ks)
 
+    # Now Path-Sized Logit: Need to compute overlap between routes
     # # Number of routes in choice set that use link j
     # for (k in no_dups) {
     #   delta_ks[paths1[[k]]] <- delta_ks[paths1[[k]]] + 1L
@@ -155,20 +191,33 @@ run_assignment <- function(graph_df, od_matrix_long, directed = FALSE,
     #   final_flows[paths1[[k]]] <- final_flows[paths1[[k]]] + flow[i] * prob_ks[k]
     # }
     # final_flows[shortest_path] <- final_flows[shortest_path] + flow[i] * prob_ks[length(prob_ks)]
-    compute_path_sized_logit(paths1, paths2, no_dups, shortest_path,
-                             cost, cost_ks, d_ij, beta,
-                             flow[i], delta_ks, final_flows)
+    wi <- compute_path_sized_logit(paths1, paths2, no_dups, shortest_path,
+                                   cost, cost_ks, d_ij, beta,
+                                   flow[i], delta_ks, final_flows, !retvals)
 
     if(retvals) {
-      if(pathsl) paths[[i]] <- c(list(as.integer(shortest_path)), lapply(no_dups, function(k) c(as.integer(paths1[[k]]), as.integer(paths2[[k]]))))
+      if(pathsl) paths[[i]] <- c(list(as.integer(shortest_path)), lapply(no_dups,
+                    function(k) c(as.integer(paths1[[k]]), as.integer(paths2[[k]]))))
+      if(countsl) {
+        ei <- whichv(delta_ks, 0, invert = TRUE)
+        if(edgesl) edges[[i]] <- ei
+        counts[[i]] <- delta_ks[ei]
+      } else if(edgesl) edges[[i]] <- whichv(delta_ks, 0, invert = TRUE)
+      if(costsl) costs[[i]] <- c(d_ij, cost_ks)
+      if(weightsl) weights[[i]] <- wi
     }
   }
 
   if(retvals) {
     if(pathsl) res$paths <- paths
-
+    if(edgesl) res$edges <- edges
+    if(countsl) res$counts <- counts
+    if(costsl) res$costs <- costs
+    if(weightsl) res$weights <- weights
   }
 
+  class(res) <- c("flowr", method)
+  return(res)
 }
 
 
