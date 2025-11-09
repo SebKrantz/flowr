@@ -175,7 +175,7 @@ dist_mat_from_graph <- function(graph_df, directed = FALSE, cost.column = "cost"
 #'   \item Each element of \code{paths1} and \code{paths2} is an integer vector
 #'   \item \code{delta_ks} is an integer vector with length >= max edge number + 1
 #' }
-#' @useDynLib mmflowr, .registration = TRUE
+#' @useDynLib flowr, .registration = TRUE
 check_path_duplicates <- function(paths1, paths2, delta_ks) {
   .Call(C_check_path_duplicates, paths1, paths2, delta_ks)
 }
@@ -209,7 +209,7 @@ check_path_duplicates <- function(paths1, paths2, delta_ks) {
 #'   \item Updates final_flows with weighted probabilities
 #' }
 #'
-#' @useDynLib mmflowr, .registration = TRUE
+#' @useDynLib flowr, .registration = TRUE
 compute_path_sized_logit <- function(paths1, paths2, no_dups, shortest_path,
                                      cost, cost_ks, d_ij, beta_PSL,
                                      flow, delta_ks, final_flows, free_delta_ks = TRUE) {
@@ -255,7 +255,7 @@ compute_path_sized_logit <- function(paths1, paths2, no_dups, shortest_path,
 #' @importFrom collapse fselect fsubset fnrow ss ckmatch
 #' @importFrom igraph graph_from_data_frame delete_vertex_attr igraph_options shortest_paths
 #' @importFrom sf st_length
-#' @useDynLib mmflowr, .registration = TRUE
+#' @useDynLib flowr, .registration = TRUE
 simplify_network <- function(x, od_matrix_long, cost.column = NULL) {
 
   if(inherits(x, "sf")) {

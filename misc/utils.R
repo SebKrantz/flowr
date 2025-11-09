@@ -193,7 +193,7 @@ dist_mat_from_graph <- function(graph_df, directed = FALSE, algorithm = "mch", .
 #'   \item Each element of \code{paths1} and \code{paths2} is an integer vector
 #'   \item \code{delta_ks} is an integer vector with length >= max edge number + 1
 #' }
-#' @useDynLib mmflowr, .registration = TRUE
+#' @useDynLib flowr, .registration = TRUE
 check_path_duplicates <- function(paths1, paths2, delta_ks) {
   .Call(C_check_path_duplicates, paths1, paths2, delta_ks)
 }
@@ -212,6 +212,7 @@ check_path_duplicates <- function(paths1, paths2, delta_ks) {
 #' @param flow Numeric scalar, flow value for this OD pair.
 #' @param delta_ks Integer vector used as hash table (will be modified and reset).
 #' @param final_flows Numeric vector of final flows (will be modified in place).
+#' @param free_delta_ks Logical scalar (default: TRUE). If TRUE, resets delta_ks to zero after computation.
 #'
 #' @return Numeric vector of probabilities with length \code{length(no_dups) + 1}.
 #'   The last element corresponds to the shortest path.
@@ -222,16 +223,16 @@ check_path_duplicates <- function(paths1, paths2, delta_ks) {
 #'   \item Updates delta_ks (edge usage counts) for all paths
 #'   \item Computes gamma correction factors for path-sized logit
 #'   \item Computes probabilities using exponential utility with path-sized correction
-#'   \item Resets delta_ks to zero
+#'   \item Resets delta_ks to zero if \code{free_delta_ks} is TRUE
 #'   \item Updates final_flows with weighted probabilities
 #' }
 #'
-#' @useDynLib mmflowr, .registration = TRUE
+#' @useDynLib flowr, .registration = TRUE
 compute_path_sized_logit <- function(paths1, paths2, no_dups, shortest_path,
                                      cost, cost_ks, d_ij, beta_PSL, flow,
-                                     delta_ks, final_flows) {
+                                     delta_ks, final_flows, free_delta_ks = TRUE) {
   .Call(C_compute_path_sized_logit, paths1, paths2, no_dups, shortest_path,
-        cost, cost_ks, d_ij, beta_PSL, flow, delta_ks, final_flows)
+        cost, cost_ks, d_ij, beta_PSL, flow, delta_ks, final_flows, free_delta_ks)
 }
 
 #' @title Get Geo Data Frame

@@ -1,5 +1,15 @@
-library(mmflowr)
-library(sf)
+library(fastverse)
+fastverse_extend(flowr, sf, igraph)
+
+process_od_matrix <- function(od_matrix_directory, cargo_type, period = NULL) {
+  files <- list.files(od_matrix_directory)
+  files <- files[files %ilike% period]
+  # cargo_type = c("Container", "Drybulk", "Liquidbulk", "General", "HighValue")
+  # period = "2019"
+  sapply(cargo_type, function(x) {
+    fread(paste(od_matrix_directory, files[files %ilike% x][1], sep = "/")) |> qM(1)
+  }, simplify = FALSE)
+}
 
 # GCC Scenario
 od_matrix <- process_od_matrix("data/OD_Matrix", "Container", "2019")
@@ -29,7 +39,6 @@ od_matrix_long <- data.frame(from = rep.int(nearest_nodes, ncol(od_matrix)),
                   fsubset(is.finite(flow) & flow > 0)
 
 # Create Graph igraph: best so far
-library(igraph)
 g <- graph_from_data_frame(graph_df |> fselect(from, to), directed = FALSE)
 g <- delete_vertex_attr(g, "name")
 igraph_options(return.vs.es = FALSE) # sparsematrices = TRUE
@@ -42,7 +51,7 @@ if(!identical(dim(dmat), rep(nrow(nodes_df), 2))) stop("Nodes and Distance Matri
 shortest_paths(g, from = 1, to = 1:100, weights = graph_df$cost, output = "epath")$epath
 
 # Some objects
-beta_PSL <- -0.1 # Path-Sized Logit parameter
+beta_PSL <- -1 # Path-Sized Logit parameter
 cost <- graph_df$cost # Edge cost
 # Edge incidence across selected routes
 delta_ks <- integer(nrow(graph_df))
@@ -56,7 +65,7 @@ system.time({
 for (i in seq_row(od_matrix_long)) {
   d_ij <- dmat[from[i], to[i]]
   d_ikj <- dmat[from[i], ] + dmat[, to[i]] # from i to all other nodes k and from these nodes k to j (basically dmat + t(dmat)?)
-  short_detour_ij <- d_ikj < 1.1 * d_ij
+  short_detour_ij <- d_ikj < 1.5 * d_ij
   short_detour_ij[d_ikj <= d_ij + .Machine$double.eps*1e3] <- FALSE # Exclude nodes k that are on the shortest path
   # which(d_ij == d_ikj) # These are the nodes on the direct path from i to j which yield the shortest distance.
   ks <- which(short_detour_ij)
@@ -72,7 +81,7 @@ for (i in seq_row(od_matrix_long)) {
   # cost_ks[k] == sum(cost[paths1[[k]]]) + sum(cost[paths2[[k]]])
 
   # Get indices of paths that do not contain duplicate edges
-  no_dups <- mmflowr:::check_path_duplicates(paths1, paths2, delta_ks)
+  no_dups <- flowr:::check_path_duplicates(paths1, paths2, delta_ks)
 
   # # Number of routes in choice set that use link j
   # for (k in no_dups) {
@@ -99,10 +108,16 @@ for (i in seq_row(od_matrix_long)) {
   #   final_flows[paths1[[k]]] <- final_flows[paths1[[k]]] + flow[i] * prob_ks[k]
   # }
   # final_flows[shortest_path] <- final_flows[shortest_path] + flow[i] * prob_ks[length(prob_ks)]
-  mmflowr:::compute_path_sized_logit(paths1, paths2, no_dups, shortest_path,
-                                     cost, cost_ks, d_ij, beta_PSL, flow[i],
-                                     delta_ks, final_flows)
+  flowr:::compute_path_sized_logit(paths1, paths2, no_dups, shortest_path,
+                                     cost, cost_ks, d_ij, lambda_PSL, beta_PSL,
+                                     flow[i], delta_ks, final_flows)
 }
 })
 detach(od_matrix_long)
 
+descr(final_flows)
+
+network_gc_cnt$final_flows <- NA_real_
+network_gc_cnt$final_flows[attr(graph_df, "group.starts")] <- final_flows
+mapview::mapview(network_gc_cnt, zcol = "final_flows") +
+  mapview::mapview(zone_nodes, col.regions = "red")

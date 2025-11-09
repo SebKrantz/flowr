@@ -1,4 +1,4 @@
-Package: mmflowr
+Package: flowr
 Type: Package
 Title: Transport Modeling: Route Enumeration and Traffic Assignment with the Path-Sized Logit
 Version: 0.0.1

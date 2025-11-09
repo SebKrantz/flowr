@@ -2,7 +2,7 @@
 #'
 #' @description
 #'
-#' *mmflowr* provides efficient tools for transportation network modeling, specifically route
+#' *flowr* provides efficient tools for transportation network modeling, specifically route
 #' enumeration and traffic assignment tasks. The package implement the path-sized logit model for
 #' traffic assignment and provides utilities for network processing.
 #'
@@ -30,7 +30,7 @@
 #' }
 #'
 #' @author Sebastian Krantz \email{sebastian.krantz@graduateinstitute.ch} and Kamol Roy \email{kamol.roy08@gmail.com}
-#' @name mmflowr-package
-#' @aliases mmflowr
+#' @name flowr-package
+#' @aliases flowr
 NULL
 
