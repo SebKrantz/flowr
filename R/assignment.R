@@ -12,19 +12,18 @@
 #' @param method Character string (default: "PSL"). Assignment method. Currently only "PSL"
 #'   (Path-Sized Logit) is implemented.
 #' @param beta Numeric (default: -1). Path-sized logit parameter (beta_PSL).
-#' @param detour.max Numeric (default: 1.5). Maximum detour factor for alternative routes (applied to shortest paths cost and used to discard too long alternative routes). This is a key parameter controlling the execution time of the algorithm: considering more routes (higher \code{detour.max}) substantially increases computation time.
+#' @param detour.max Numeric (default: 1.5). Maximum detour factor for alternative routes (applied to shortest paths cost). This is a key parameter controlling the execution time of the algorithm: considering more routes (higher \code{detour.max}) substantially increases computation time.
 #' @param angle.max Numeric (default: 90). Maximum detour angle (in degrees, two sided). I.e., nodes not within this angle measured against a straight line from origin to destination node will not be considered for detours.
 #' @param return.extra Character vector specifying additional results to return. Options include:
-#'   \code{"graph_df"}, \code{"od_matrix_long"}, \code{"dmat"}, \code{"paths"}, \code{"edges"},
-#'   \code{"costs"}, \code{"weights"}. Use \code{"all"} to return all available extra results.
-#'   Default: \code{c("graph", "paths", "edges", "counts", "costs", "weights")}.
+#'   \code{"graph"}, \code{"dmat"}, \code{"paths"} (most memory intensive), \code{"edges"}, \code{"costs"}, \code{"weights"}.
+#'   Use \code{"all"} to return all available extra results.
+#'
 #' @param precompute.dmat description
 #'
 #' @return A list containing:
 #'   \itemize{
 #'     \item \code{call} - The function call
-#'     \item \code{final_flows} - Numeric vector of assigned flows for each edge (if \code{graph_df}
-#'       is not in \code{return.extra})
+#'     \item \code{final_flows} - Numeric vector of assigned flows for each edge
 #'     \item Additional elements as specified in \code{return.extra}
 #'   }
 #'
@@ -47,6 +46,8 @@
 #' The path-sized logit model accounts for route overlap by adjusting probabilities based on
 #' the number of alternative routes using each edge. Flows are assigned proportionally to
 #' the computed probabilities.
+#'
+#' @seealso \link{flowr-package}
 #'
 #' @export
 #' @importFrom collapse fselect fnrow fsubset ckmatch alloc setDimnames anyv
