@@ -80,23 +80,23 @@ SEXP check_path_duplicates(SEXP paths1, SEXP paths2, SEXP delta_ks) {
 SEXP mark_edges_traversed(SEXP paths, SEXP edges_traversed) {
 
   int n_paths = length(paths);
-  
+
   // Get pointer to edges_traversed for direct indexing
   int *edges_ptr = INTEGER(edges_traversed);
-  
+
   // Iterate over each path
   const SEXP *paths_ptr = SEXPPTR_RO(paths);
-  
+
   for (int k = 0; k < n_paths; k++) {
     int path_len = length(paths_ptr[k]);
     if (path_len == 0) continue; // Skip empty paths
-    
+
     double *path_ptr = REAL(paths_ptr[k]);
-    
+
     // Increment count for each edge in the path
     for (int i = 0; i < path_len; i++) edges_ptr[(int)path_ptr[i] - 1]++;
   }
-  
+
   return edges_traversed;
 }
 
@@ -110,8 +110,7 @@ SEXP mark_edges_traversed(SEXP paths, SEXP edges_traversed) {
  * This function resets to zero the values in the integer vector delta_ks corresponding to
  * all edges traversed by the given set of paths. For each index in no_dups, retrieves the
  * corresponding path from paths1 and paths2, and for each edge in these paths, sets its delta_ks
- * entry (vector index is edge number minus 1) to zero. Finally, for each edge in shortest_path,
- * the delta_ks entry is also set to zero.
+ * entry to zero. Finally, for each edge in shortest_path, the delta_ks entry is also set to zero.
  *
  * Intended for use after edge count tallies (delta_ks) are no longer needed for those paths.
  *
