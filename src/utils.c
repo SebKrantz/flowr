@@ -37,27 +37,21 @@ SEXP check_path_duplicates(SEXP paths1, SEXP paths2, SEXP delta_ks) {
     int len2 = length(paths2_ptr[k]);
     double *path1_ptr = REAL(paths1_ptr[k]);
     double *path2_ptr = REAL(paths2_ptr[k]);
-
-    // First pass: check for duplicates
     int has_duplicate = 0;
 
     // Check edges in path1
-    for (int i = 0; i < len1; i++) delta_ptr[(int)path1_ptr[i] - 1] = 1; // Mark edge as seen
+    for (int i = 0; i < len1; i++) delta_ptr[(int)path1_ptr[i]] = 1; // Mark edge as seen
 
     // check path2 for duplicates with path1
     for (int i = 0; i < len2; i++) {
-        // Convert to 0-based for C array indexing
-        int edge = (int)path2_ptr[i] - 1;
-        if (delta_ptr[edge] > 0) {
+        if (delta_ptr[(int)path2_ptr[i]]) {
             has_duplicate = 1;
             break; // Found duplicate
         }
-        delta_ptr[edge] = 1; // Mark edge as seen
     }
 
     // Second pass: clear the hash table
-    for (int i = 0; i < len1; i++) delta_ptr[(int)path1_ptr[i] - 1] = 0;
-    for (int i = 0; i < len2; i++) delta_ptr[(int)path2_ptr[i] - 1] = 0;
+    for (int i = 0; i < len1; i++) delta_ptr[(int)path1_ptr[i]] = 0;
 
     // Set result: TRUE if no duplicates, FALSE if duplicates
     if(!has_duplicate) buf[j++] = k+1;
@@ -99,9 +93,6 @@ SEXP mark_edges_traversed(SEXP paths, SEXP edges_traversed) {
 
   return edges_traversed;
 }
-
-
-
 
 
 /**
