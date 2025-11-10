@@ -17,8 +17,7 @@
 #'
 #' @export
 #' @importFrom sf st_geometry_type st_coordinates
-#' @importFrom collapse qDF GRP add_vars fselect ffirst flast add_stub fmutate group fmatch %+=% fmax colorder
-#' @importFrom data.table fifelse
+#' @importFrom collapse qDF GRP get_vars add_vars fselect ffirst flast add_stub fmutate group fmatch %+=% fmax colorder whichNA setv unattrib
 linestrings_to_graph <- function(lines, digits = 6) {
   gt <- st_geometry_type(lines, by_geometry = FALSE)
   if(length(gt) != 1L || gt != "LINESTRING") stop("lines needs to be a sf data frame of LINESTRING's")
@@ -27,12 +26,20 @@ linestrings_to_graph <- function(lines, digits = 6) {
   graph <- add_vars(fselect(graph, X, Y) |> ffirst(g, na.rm = FALSE, use.g.names = FALSE) |> add_stub("F"),
                     fselect(graph, X, Y) |> flast(g, na.rm = FALSE, use.g.names = FALSE) |> add_stub("T")) |>
            add_vars(g$groups, pos = "front")
-  if(is.numeric(digits) && is.finite(digits)) fselect(graph, FX, FY, TX, TY) %<>% lapply(round, digits = digits)
-  graph |>
-    fmutate(from = unclass(group(FX, FY)),
-            to = from[fmatch(list(TX, TY), list(FX, FY))],
-            to = fifelse(is.na(to), unclass(group(TX, TY)) %+=% fmax(to), to)) |>
+  if(is.numeric(digits) && is.finite(digits)) {
+    coords <- c("FX", "FY", "TX", "TY")
+    get_vars(graph, coords) <- get_vars(graph, coords) |>
+      lapply(round, digits = digits)
+  }
+  graph <- graph |>
+    fmutate(from = unattrib(group(FX, FY)),
+            to = from[fmatch(list(TX, TY), list(FX, FY))]) |>
     colorder(line, from, FX, FY, to, TX, TY)
+  if(anyNA(graph$to)) {
+    miss <- whichNA(graph$to)
+    setv(graph$to, miss, group(ss(graph, miss, c("TX", "TY"), check = FALSE)) %+=% fmax(graph$from), vind1 = TRUE)
+  }
+  graph
 }
 
 #' @title Create Undirected Graph
@@ -75,8 +82,10 @@ linestrings_to_graph <- function(lines, digits = 6) {
 create_undirected_graph <- function(graph_df, cols.aggregate = "cost", fun.aggregate = fmean, ...) {
   graph_df %<>% ftransform(from = pmin(from, to), to = pmax(from, to))
   g <- GRP(graph_df, ~ from + to, sort = FALSE)
-  if(last(as.character(substitute(fun.aggregate))) %!in% .FAST_STAT_FUN)
-    fun.aggregate <- function(x, g, ...) BY(x, g, fun.aggregate, ...)
+  if(last(as.character(substitute(fun.aggregate))) %!in% .FAST_STAT_FUN) {
+    FUN <- match.fun(fun.aggregate)
+    fun.aggregate <- function(x, g, ...) BY(x, g, FUN, ...)
+  }
   res <- add_vars(g$groups,
     ffirst(get_vars(graph_df, c("line", "FX", "FY", "TX", "TY")), g, use.g.names = FALSE),
     fun.aggregate(get_vars(graph_df, cols.aggregate), g, use.g.names = FALSE)) |>
