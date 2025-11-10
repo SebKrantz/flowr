@@ -68,7 +68,7 @@ run_assignment <- function(graph_df, od_matrix_long,
   # Results object
   res <- list(call = match.call())
   if(length(return.extra) == 1L && return.extra == "all")
-    return.extra <- c("graph", "dmat", "paths", "edges", "costs", "weights")
+    return.extra <- c("graph", "dmat", "paths", "edges", "counts", "costs", "weights")
 
   # Create Igraph Graph
   nodes <- funique.default(c(graph_df$from, graph_df$to), sort = TRUE)
@@ -149,7 +149,6 @@ run_assignment <- function(graph_df, od_matrix_long,
     short_detour_ij[d_ikj < d_ij + .Machine$double.eps*1e3] <- FALSE # Exclude nodes k that are on the shortest path
     # which(d_ij == d_ikj) # These are the nodes on the direct path from i to j which yield the shortest distance.
     ks <- which(short_detour_ij)
-    cost_ks <- d_ikj[ks]
 
     # We add the shortest path at the end of paths1
     # TODO: Could still optimize calls to shortest_paths(), e.g., go to C directly.
@@ -165,6 +164,7 @@ run_assignment <- function(graph_df, od_matrix_long,
 
     # Get indices of paths that do not contain duplicate edges
     no_dups <- .Call(C_check_path_duplicates, paths1, paths2, delta_ks)
+    cost_ks <- d_ikj[ks]
 
     # Now Path-Sized Logit: Need to compute overlap between routes
     # # Number of routes in choice set that use link j
@@ -203,7 +203,7 @@ run_assignment <- function(graph_df, od_matrix_long,
         if(edgesl) edges[[i]] <- ei
         counts[[i]] <- delta_ks[ei]
       } else if(edgesl) edges[[i]] <- whichv(delta_ks, 0L, invert = TRUE)
-      if(costsl) costs[[i]] <- c(d_ij, cost_ks)
+      if(costsl) costs[[i]] <- c(d_ij, cost_ks[no_dups])
       if(weightsl) weights[[i]] <- wi
     }
     .Call(C_free_delta_ks, delta_ks, no_dups, paths1, paths2, shortest_path)

@@ -105,7 +105,7 @@ SEXP compute_path_sized_logit(SEXP paths1, SEXP paths2, SEXP no_dups, SEXP short
       int edge = (int)p2[i];
       sum += cost_ptr[edge-1] / delta_ptr[edge];
     }
-    gamma_ks[idx] = sum / cost_ks_ptr[idx];
+    gamma_ks[idx] = sum / cost_ks_ptr[k];
     // Ensure gamma is positive to avoid log(0) or log(negative)
     if (gamma_ks[idx] <= 0.0) gamma_ks[idx] = 1e-10;
   }
@@ -125,7 +125,7 @@ SEXP compute_path_sized_logit(SEXP paths1, SEXP paths2, SEXP no_dups, SEXP short
   memset(prob_ptr, 0, (n_no_dups + 1) * sizeof(double));
   double sum_exp = 0.0;
   for (int idx = 0; idx < n_no_dups; idx++) {
-    prob_ptr[idx+1] = exp(-cost_ks_ptr[idx] + beta_PSL_val * log(gamma_ks[idx]));
+    prob_ptr[idx+1] = exp(-cost_ks_ptr[no_dups_ptr[idx]-1] + beta_PSL_val * log(gamma_ks[idx]));
     sum_exp += prob_ptr[idx+1];
   }
   prob_ptr[0] = exp(-d_ij_val + beta_PSL_val * log(gamma_1));
