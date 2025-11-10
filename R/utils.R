@@ -149,7 +149,7 @@ nodes_from_graph <- function(graph_df) {
 #' which is particularly efficient for repeated queries.
 #'
 #' @export
-#' @importFrom collapse fselect fnrow
+#' @importFrom collapse fselect fnrow funique.default
 #' @importFrom igraph graph_from_data_frame distances
 dist_mat_from_graph <- function(graph_df, directed = FALSE, cost.column = "cost", ...) {
   cost <- if(is.character(cost.column) && length(cost.column) == 1L) graph_df[[cost.column]] else
@@ -157,9 +157,9 @@ dist_mat_from_graph <- function(graph_df, directed = FALSE, cost.column = "cost"
     stop("cost.column needs to be a column name in graph_df or a numeric vector matching nrow(graph_df)")
 
   # Create Igraph Graph
+  vertices <- data.frame(name = funique.default(c(graph_df$from, graph_df$to), sort = TRUE))
   g <- graph_df |> fselect(from, to) |>
-    graph_from_data_frame(directed = directed) # |>
-    # delete_vertex_attr("name")
+    graph_from_data_frame(directed = directed, vertices = vertices)
 
   distances(g, mode = "out", weights = cost)
   # graph <- makegraph(graph_df |> fselect(from, to, cost), directed = directed) # directed = FALSE # cpp_simplify()
