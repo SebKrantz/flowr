@@ -3,6 +3,7 @@
 #'
 #' @param lines An sf data frame of LINESTRING geometries.
 #' @param digits Numeric rounding applied to coordinates (to ensure that matching points across different linestrings is not impaired by numeric precision issues). Set to \code{NA/Inf/FALSE} to disable.
+#' @param keep.cols Character vector of column names to keep from the input data frame.
 #' @return A data.frame representing the graph with columns:
 #' \itemize{
 #'  \item \code{line} - Line identifier
@@ -19,7 +20,7 @@
 #' @export
 #' @importFrom sf st_geometry_type st_coordinates
 #' @importFrom collapse qDF GRP get_vars get_vars<- add_vars fselect ffirst flast add_stub fmutate group fmatch %+=% fmax colorder whichNA setv unattrib
-linestrings_to_graph <- function(lines, digits = 6) {
+linestrings_to_graph <- function(lines, digits = 6, keep.cols = NULL) {
   gt <- st_geometry_type(lines, by_geometry = FALSE)
   if(length(gt) != 1L || gt != "LINESTRING") stop("lines needs to be a sf data frame of LINESTRING's")
   graph <- st_coordinates(lines) |> qDF()
@@ -40,6 +41,7 @@ linestrings_to_graph <- function(lines, digits = 6) {
     miss <- whichNA(graph$to)
     setv(graph$to, miss, group(ss(graph, miss, c("TX", "TY"), check = FALSE)) %+=% fmax(graph$from), vind1 = TRUE)
   }
+  if(!is.null(keep.cols)) add_vars(graph) <- get_vars(unclass(lines), keep.cols)
   graph
 }
 

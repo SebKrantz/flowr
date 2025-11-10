@@ -63,6 +63,8 @@ final_flows <- result$final_flows
 
 ```r
 library(flowr)
+library(sf)
+
 # Read network from shapefile
 network <- st_read("data/network/base_network.shp")
 
@@ -75,8 +77,7 @@ simplified <- simplify_network(
 
 # Convert to graph
 graph_df <- simplified |>
-  linestrings_to_graph() |>
-  cbind(cost = network$cost) |>
+  linestrings_to_graph(keep.cols = "cost") |>
   create_undirected_graph()
 ```
 
@@ -121,8 +122,7 @@ zone_nodes <- st_read("data/zone_nodes/network_nodes.shp")
 
 # 2. Convert network to graph
 graph_df <- network |>
-  linestrings_to_graph() |>
-  add_vars(cost = network$cost) |>
+  linestrings_to_graph(keep.cols = "cost") |>
   create_undirected_graph()
 
 # 3. Map zones to nearest network nodes
