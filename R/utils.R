@@ -19,7 +19,7 @@
 #'
 #' @export
 #' @importFrom sf st_geometry_type st_coordinates
-#' @importFrom collapse qDF GRP get_vars get_vars<- add_vars fselect ffirst flast add_stub fmutate group fmatch %+=% fmax colorder whichNA setv unattrib
+#' @importFrom collapse qDF GRP get_vars get_vars<- add_vars add_vars<- fselect ffirst flast add_stub fmutate group fmatch %+=% fmax colorder whichNA setv unattrib
 linestrings_to_graph <- function(lines, digits = 6, keep.cols = NULL) {
   gt <- st_geometry_type(lines, by_geometry = FALSE)
   if(length(gt) != 1L || gt != "LINESTRING") stop("lines needs to be a sf data frame of LINESTRING's")
