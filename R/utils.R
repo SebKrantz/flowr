@@ -82,12 +82,12 @@ linestrings_from_graph <- function(graph_df, crs = 4326) {
   lines_list <- with(graph_df, lapply(seq_row(graph_df), function(i) {
     matrix(c(FX[i], FY[i], TX[i], TY[i]), ncol = 2, byrow = TRUE) |>
     st_linestring()
-  })) |> st_as_sfc(crs = crs)
+  })) |> st_sfc(crs = crs)
   # Create sf data frame with all columns
   graph_df |>
     fselect(-FX, -FY, -TX, -TY) |>
-    add_vars(geometry = lines_list) |>
-    st_as_sf(sf_column_name = "geometry", crs = crs)
+    add_vars(list(geometry = lines_list)) |>
+    st_sf(sf_column_name = "geometry", crs = crs)
 }
 
 #' @title Create Undirected Graph
