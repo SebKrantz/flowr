@@ -173,10 +173,10 @@ run_assignment <- function(graph_df, od_matrix_long,
 
     # We add the shortest path at the end of paths1
     # TODO: Could still optimize calls to shortest_paths(), e.g., go to C directly.
-    paths1 <- shortest_paths(g, from = from[i], to = c(ks, to[i]),
-                             weights = cost, mode = "out", output = "epath")$epath
-    paths2 <- shortest_paths(g, from = to[i], to = ks,
-                             weights = cost, mode = "in", output = "epath")$epath
+    paths1 <- shortest_paths(g, from = from[i], to = c(ks, to[i]), weights = cost,
+                             mode = "out", output = "epath", algorithm = "automatic")$epath
+    paths2 <- shortest_paths(g, from = to[i], to = ks, weights = cost,
+                             mode = "in", output = "epath", algorithm = "automatic")$epath
     shortest_path <- paths1[[length(paths1)]]
 
     # # Check
