@@ -247,23 +247,32 @@ run_assignment <- function(graph_df, od_matrix_long,
 #' @param ... Additional arguments (currently ignored).
 #'
 #' @export
-#' @importFrom collapse fmean vlengths
+#' @importFrom collapse fmean fsd vlengths
 print.flowr <- function(x, ...) {
   cat("Flowr object\n")
-  cat("Call: ", deparse(x$call), "\n")
-  if(!is.null(x$dmat) && is.matrix(x$dmat))
-    cat("Number of nodes: ", nrow(x$dmat), "\n")
-  cat("Number of edges: ", length(x$final_flows), "\n")
+  cat("Call:", deparse(x$call), "\n\n")
+  if (!is.null(x$dmat) && is.matrix(x$dmat))
+    cat("Number of nodes:", nrow(x$dmat), "\n")
+  cat("Number of edges:", length(x$final_flows), "\n")
   if (!is.null(x$od_pairs_used) && length(x$od_pairs_used))
-    cat("Number of simulations (OD-pairs): ", length(x$od_pairs_used), "\n")
-  else if (!is.null(x$paths) && length(x$paths))
-    cat("Number of simulations (OD-pairs): ", length(x$paths), "\nAverage number of paths per simulation: ", fmean(vlengths(x$paths)), "\n")
-  if (!is.null(x$edges) && length(x$edges))
-    cat("Average number of edges utilized per simulation: ", fmean(vlengths(x$edges)), "\n")
+    cat("Number of simulations/OD-pairs:", length(x$od_pairs_used), "\n")
+  if (!is.null(x$paths) && length(x$paths)) {
+    if (is.null(x$od_pairs_used) || !length(x$od_pairs_used))
+      cat("Number of simulations/OD-pairs:", length(x$paths), "\n")
+  }
+  cat("\n")
+  if (!is.null(x$paths) && length(x$paths)) {
+    pls <- vlengths(x$paths)
+    cat("Average number of paths per simulation (SD): ", fmean(pls), "  (", fsd(pls, stable.algo = FALSE), ")\n", sep = "")
+  }
+  if (!is.null(x$edges) && length(x$edges)) {
+    els <- vlengths(x$edges)
+    cat("Average number of edges utilized per simulation (SD): ", fmean(els), "  (", fsd(els, stable.algo = FALSE), ")\n", sep = "")
+  }
   if (!is.null(x$edge_counts) && length(x$edge_counts))
-    cat("Average number of visits per edge: ", fmean(fmean(x$edge_counts)), "\n")
+    cat("Average number of visits per edge (SD): ", fmean(fmean(x$edge_counts)), "  (", fmean(fsd(x$edge_counts, stable.algo = FALSE)), ")\n", sep = "")
   if (!is.null(x$path_costs) && length(x$path_costs))
-    cat("Average path cost: ", fmean(fmean(x$path_costs)), "\n")
+    cat("Average path cost (SD): ", fmean(fmean(x$path_costs)), "  (", fmean(fsd(x$path_costs, stable.algo = FALSE)), ")\n", sep = "")
   if (!is.null(x$path_weights) && length(x$path_weights))
-    cat("Average path weight: ", fmean(fmean(x$path_weights)), "\n")
+    cat("Average path weight (SD): ", fmean(fmean(x$path_weights)), "  (", fmean(fsd(x$path_weights, stable.algo = FALSE)), ")\n", sep = "")
 }
