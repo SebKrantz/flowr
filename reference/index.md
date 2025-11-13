@@ -1,23 +1,39 @@
 # Package index
 
-## All functions
-
-- [`create_undirected_graph()`](https://sebkrantz.github.io/flowr/reference/create_undirected_graph.md)
-  : Create Undirected Graph
-- [`dist_mat_from_graph()`](https://sebkrantz.github.io/flowr/reference/dist_mat_from_graph.md)
-  : Compute Distance Matrix from Graph
 - [`flowr-package`](https://sebkrantz.github.io/flowr/reference/flowr-package.md)
   [`flowr`](https://sebkrantz.github.io/flowr/reference/flowr-package.md)
   : Transport Modeling
-- [`linestrings_from_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_from_graph.md)
-  : Convert Graph to Linestrings
+
+## Network Processing
+
+Utility functions to prepare networks graphs (represented as data
+frames) for analysis with flowr.
+
 - [`linestrings_to_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_to_graph.md)
   : Convert Linestring to Graph
-- [`nodes_from_graph()`](https://sebkrantz.github.io/flowr/reference/nodes_from_graph.md)
-  : Extract Nodes from Graph
-- [`print(`*`<flowr>`*`)`](https://sebkrantz.github.io/flowr/reference/print.flowr.md)
-  : Print Flowr Object
-- [`run_assignment()`](https://sebkrantz.github.io/flowr/reference/run_assignment.md)
-  : Run Traffic Assignment
+- [`create_undirected_graph()`](https://sebkrantz.github.io/flowr/reference/create_undirected_graph.md)
+  : Create Undirected Graph
 - [`simplify_network()`](https://sebkrantz.github.io/flowr/reference/simplify_network.md)
   : Simplify Network
+
+## Route Choice and Traffic Assignment
+
+Run traffic assignment using path-sized logit model, including efficient
+built-in route choice algorithm.
+
+- [`run_assignment()`](https://sebkrantz.github.io/flowr/reference/run_assignment.md)
+  : Run Traffic Assignment
+- [`print(`*`<flowr>`*`)`](https://sebkrantz.github.io/flowr/reference/print.flowr.md)
+  : Print Flowr Object
+
+## Graph Utilities
+
+Utility functions to extract information from graphs (represented as
+data frames).
+
+- [`nodes_from_graph()`](https://sebkrantz.github.io/flowr/reference/nodes_from_graph.md)
+  : Extract Nodes from Graph
+- [`linestrings_from_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_from_graph.md)
+  : Convert Graph to Linestrings
+- [`dist_mat_from_graph()`](https://sebkrantz.github.io/flowr/reference/dist_mat_from_graph.md)
+  : Compute Distance Matrix from Graph
