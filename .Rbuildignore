@@ -5,3 +5,6 @@ data
 misc
 LICENSE
 ^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

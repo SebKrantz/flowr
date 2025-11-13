@@ -24,3 +24,4 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
+URL: https://sebkrantz.github.io/flowr/
