@@ -57,9 +57,7 @@ od_matrix_long <- data.frame(
 # Run traffic assignment
 result <- run_assignment(
   graph_df = graph_df,
-  od_matrix_long = od_matrix_long,
-  beta = -1,
-  detour.max = 1.5
+  od_matrix_long = od_matrix_long
 )
 
 # Access results
