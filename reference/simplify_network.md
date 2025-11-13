@@ -6,7 +6,12 @@ paths between origin-destination pairs in the OD matrix.
 ## Usage
 
 ``` r
-simplify_network(x, od_matrix_long, cost.column = NULL)
+simplify_network(
+  x,
+  od_matrix_long,
+  cost.column = NULL,
+  return = c("edges", "edge_counts", "graph_df")
+)
 ```
 
 ## Arguments
@@ -29,6 +34,10 @@ simplify_network(x, od_matrix_long, cost.column = NULL)
 
   Character string (optional). Name of the cost column in `x`. If `NULL`
   and `x` is an sf object, uses `st_length(x)` as the cost.
+
+- return:
+
+  description
 
 ## Value
 

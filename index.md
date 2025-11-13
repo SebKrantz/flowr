@@ -63,7 +63,7 @@ result <- run_assignment(
 )
 
 # Access results
-final_flows <- result$final_flows
+result$final_flows
 ```
 
 ### Working with Spatial Networks
