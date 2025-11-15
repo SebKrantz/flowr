@@ -54,11 +54,8 @@ od_matrix_long <- data.frame(
   flow = c(100, 80, 60)
 )
 
-# Run traffic assignment
-result <- run_assignment(
-  graph_df = graph_df,
-  od_matrix_long = od_matrix_long
-)
+# Run traffic assignment (and route enumeration)
+result <- run_assignment(graph_df, od_matrix_long)
 
 # Access results
 result$final_flows
@@ -70,31 +67,42 @@ result$final_flows
 library(flowr)
 library(sf)
 
-# Read network from shapefile
-network <- st_read("data/network/base_network.shp")
-
-# Simplify network by keeping only traversed edges along shortest paths
-simplified <- simplify_network(
-  x = network,
-  od_matrix_long = od_matrix_long,
-  cost.column = "cost"  # Uses st_length() if NULL
-)
-
-# Convert to graph
-graph_df <- simplified |>
+# Read network from shapefile and create undirected graph (optional)
+graph_df <- st_read("data/network/base_network.shp") |> 
   linestrings_to_graph(keep.cols = "cost") |>
   create_undirected_graph()
+
+# Read zone centroids and get nearest nodes
+od_zones <- st_read("data/zone_nodes/network_nodes.shp") |> st_centroid()
+nodes <- nodes_from_graph(graph_df, return.sf = TRUE)
+nearest_nodes <- st_nearest_feature(od_zones, nodes)
+
+# Consolidate Graph (optional)
+graph_df <- consolidate_graph(graph_df, keep = nearest_nodes, w = ~ cost)
+
+# Simplify network by keeping only traversed edges along shortest paths (optional)
+graph_df <- simplify_network(graph_df, nearest_nodes, cost.column = "cost")
 ```
 
 ## Main Functions
 
-### Traffic Assignment
+### Traffic Assignment and Route Enumeration
 
-- **[`run_assignment()`](https://sebkrantz.github.io/flowr/reference/run_assignment.md)** -
-  Assign traffic flows to network edges using path-sized logit model
+- **[`run_assignment()`](https://sebkrantz.github.io/flowr/reference/run_assignment.md)**:
+  - Iterates through OD-pairs generating sensible alternative routes
+  - Assigns traffic flows to network edges using path-sized logit model
   - Supports directed and undirected graphs
-  - Configurable detour factors and angle constraints
-  - Returns flows and optional path information
+  - Returns flows and optional path/route information
+  - **Key Parameters**:
+    - **`beta`** (default: -1): Path-sized logit parameter (beta_PSL)
+    - **`detour.max`** (default: 1.5): Maximum detour factor for
+      alternative routes. Higher values consider more routes but
+      increase computation time
+    - **`angle.max`** (default: 90): Maximum detour angle in degrees
+      (two-sided)
+    - **`return.extra`**: Additional results to return from the route
+      enumeration stage (`"graph"`, `"dmat"`, `"paths"`, `"edges"`,
+      `"counts"`, `"costs"`, `"weights"`, or `"all"`)
 
 ### Network Processing
 
@@ -102,6 +110,9 @@ graph_df <- simplified |>
   Convert LINESTRING geometries to graph data frame
 - **[`create_undirected_graph()`](https://sebkrantz.github.io/flowr/reference/create_undirected_graph.md)** -
   Convert directed graph to undirected with edge aggregation
+- **[`consolidate_graph()`](https://sebkrantz.github.io/flowr/reference/consolidate_graph.md)** -
+  Consolidate graph by removing intermediate nodes and merging
+  connecting edges
 - **[`simplify_network()`](https://sebkrantz.github.io/flowr/reference/simplify_network.md)** -
   Simplify network by keeping only edges traversed by shortest paths
 
@@ -114,28 +125,17 @@ graph_df <- simplified |>
 - **[`dist_mat_from_graph()`](https://sebkrantz.github.io/flowr/reference/dist_mat_from_graph.md)** -
   Compute distance matrix for all node pairs
 
-## Key Parameters
-
-### `run_assignment()`
-
-- **`beta`** (default: -1): Path-sized logit parameter (beta_PSL)
-- **`detour.max`** (default: 1.5): Maximum detour factor for alternative
-  routes. Higher values consider more routes but increase computation
-  time
-- **`angle.max`** (default: 90): Maximum detour angle in degrees
-  (two-sided)
-- **`return.extra`**: Additional results to return (`"graph"`, `"dmat"`,
-  `"paths"`, `"edges"`, `"costs"`, `"weights"`, or `"all"`)
-
 ## Example Workflow
 
 ``` r
-library(flowr)
-library(sf)
+library(fastverse)
+fastverse_extend(flowr, sf)
 
-# 1. Load network and zone nodes
+# 1. Load network and OD zone nodes
 network <- st_read("data/network/base_network.shp")
-zone_nodes <- st_read("data/zone_nodes/network_nodes.shp")
+od_zones <- st_read("data/zone_nodes/network_nodes.shp")
+od_matrix <- fread("data/od_matrices/od_container_flows.csv") |> qM(1)
+if(!all(dim(od_matrix) == nrow(od_zones))) stop("zones and OD matrix must match")
 
 # 2. Convert network to graph
 graph_df <- network |>
@@ -143,11 +143,8 @@ graph_df <- network |>
   create_undirected_graph()
 
 # 3. Map zones to nearest network nodes
-nodes_df <- nodes_from_graph(graph_df)
-nearest_nodes <- st_nearest_feature(
-  zone_nodes,
-  st_as_sf(nodes_df, coords = c("X", "Y"), crs = 4326)
-)
+nodes <- nodes_from_graph(graph_df, return.sf = TRUE)
+nearest_nodes <- st_nearest_feature(od_zones, nodes)
 
 # 4. Prepare OD matrix
 od_matrix_long <- data.frame(
@@ -157,15 +154,12 @@ od_matrix_long <- data.frame(
 ) |> fsubset(is.finite(flow) & flow > 0)
 
 # 5. Run assignment
-result <- run_assignment(
-  graph_df = graph_df,
-  od_matrix_long = od_matrix_long,
-  return.extra = "all"
-)
+result <- run_assignment(graph_df, od_matrix_long)
 
-# 6. Visualize results
+# 6. Visualize results (optional)
 network$final_flows <- NA_real_
 network$final_flows[attr(graph_df, "group.starts")] <- result$final_flows
+mapview::mapview(network, zcol = "final_flows")
 ```
 
 ## Authors
@@ -193,13 +187,15 @@ citation("flowr")
 
 ## Network Processing
 
-Utility functions to prepare networks graphs (represented as data
+Utility functions to prepare networks graphs (represented using data
 frames) for analysis with flowr.
 
 - [`linestrings_to_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_to_graph.md)
   : Convert Linestring to Graph
 - [`create_undirected_graph()`](https://sebkrantz.github.io/flowr/reference/create_undirected_graph.md)
   : Create Undirected Graph
+- [`consolidate_graph()`](https://sebkrantz.github.io/flowr/reference/consolidate_graph.md)
+  : Consolidate Graph
 - [`simplify_network()`](https://sebkrantz.github.io/flowr/reference/simplify_network.md)
   : Simplify Network
 
@@ -215,7 +211,7 @@ built-in route choice algorithm.
 
 ## Graph Utilities
 
-Utility functions to extract information from graphs (represented as
+Utility functions to extract information from graphs (represented using
 data frames).
 
 - [`nodes_from_graph()`](https://sebkrantz.github.io/flowr/reference/nodes_from_graph.md)

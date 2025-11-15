@@ -112,11 +112,8 @@
 <span>  flow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">80</span>, <span class="fl">60</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Run traffic assignment</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_assignment.html">run_assignment</a></span><span class="op">(</span></span>
-<span>  graph_df <span class="op">=</span> <span class="va">graph_df</span>,</span>
-<span>  od_matrix_long <span class="op">=</span> <span class="va">od_matrix_long</span></span>
-<span><span class="op">)</span></span>
+<span><span class="co"># Run traffic assignment (and route enumeration)</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_assignment.html">run_assignment</a></span><span class="op">(</span><span class="va">graph_df</span>, <span class="va">od_matrix_long</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Access results</span></span>
 <span><span class="va">result</span><span class="op">$</span><span class="va">final_flows</span></span></code></pre></div>
@@ -128,35 +125,50 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://sebkrantz.github.io/flowr/">flowr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Read network from shapefile</span></span>
-<span><span class="va">network</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"data/network/base_network.shp"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Simplify network by keeping only traversed edges along shortest paths</span></span>
-<span><span class="va">simplified</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simplify_network.html">simplify_network</a></span><span class="op">(</span></span>
-<span>  x <span class="op">=</span> <span class="va">network</span>,</span>
-<span>  od_matrix_long <span class="op">=</span> <span class="va">od_matrix_long</span>,</span>
-<span>  cost.column <span class="op">=</span> <span class="st">"cost"</span>  <span class="co"># Uses st_length() if NULL</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Convert to graph</span></span>
-<span><span class="va">graph_df</span> <span class="op">&lt;-</span> <span class="va">simplified</span> <span class="op">|&gt;</span></span>
+<span><span class="co"># Read network from shapefile and create undirected graph (optional)</span></span>
+<span><span class="va">graph_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"data/network/base_network.shp"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/linestrings_to_graph.html">linestrings_to_graph</a></span><span class="op">(</span>keep.cols <span class="op">=</span> <span class="st">"cost"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/create_undirected_graph.html">create_undirected_graph</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="reference/create_undirected_graph.html">create_undirected_graph</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Read zone centroids and get nearest nodes</span></span>
+<span><span class="va">od_zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"data/zone_nodes/network_nodes.shp"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">st_centroid</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">nodes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nodes_from_graph.html">nodes_from_graph</a></span><span class="op">(</span><span class="va">graph_df</span>, return.sf <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">nearest_nodes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_nearest_feature.html" class="external-link">st_nearest_feature</a></span><span class="op">(</span><span class="va">od_zones</span>, <span class="va">nodes</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Consolidate Graph (optional)</span></span>
+<span><span class="va">graph_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/consolidate_graph.html">consolidate_graph</a></span><span class="op">(</span><span class="va">graph_df</span>, keep <span class="op">=</span> <span class="va">nearest_nodes</span>, w <span class="op">=</span> <span class="op">~</span> <span class="va">cost</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Simplify network by keeping only traversed edges along shortest paths (optional)</span></span>
+<span><span class="va">graph_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simplify_network.html">simplify_network</a></span><span class="op">(</span><span class="va">graph_df</span>, <span class="va">nearest_nodes</span>, cost.column <span class="op">=</span> <span class="st">"cost"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
 </h2>
 <div class="section level3">
-<h3 id="traffic-assignment">Traffic Assignment<a class="anchor" aria-label="anchor" href="#traffic-assignment"></a>
+<h3 id="traffic-assignment-and-route-enumeration">Traffic Assignment and Route Enumeration<a class="anchor" aria-label="anchor" href="#traffic-assignment-and-route-enumeration"></a>
 </h3>
 <ul>
 <li>
-<strong><code><a href="reference/run_assignment.html">run_assignment()</a></code></strong> - Assign traffic flows to network edges using path-sized logit model
+<strong><code><a href="reference/run_assignment.html">run_assignment()</a></code></strong>:
 <ul>
+<li>Iterates through OD-pairs generating sensible alternative routes</li>
+<li>Assigns traffic flows to network edges using path-sized logit model</li>
 <li>Supports directed and undirected graphs</li>
-<li>Configurable detour factors and angle constraints</li>
-<li>Returns flows and optional path information</li>
+<li>Returns flows and optional path/route information</li>
+<li>
+<strong>Key Parameters</strong>:
+<ul>
+<li>
+<strong><code>beta</code></strong> (default: -1): Path-sized logit parameter (beta_PSL)</li>
+<li>
+<strong><code>detour.max</code></strong> (default: 1.5): Maximum detour factor for alternative routes. Higher values consider more routes but increase computation time</li>
+<li>
+<strong><code>angle.max</code></strong> (default: 90): Maximum detour angle in degrees (two-sided)</li>
+<li>
+<strong><code>return.extra</code></strong>: Additional results to return from the route enumeration stage (<code>"graph"</code>, <code>"dmat"</code>, <code>"paths"</code>, <code>"edges"</code>, <code>"counts"</code>, <code>"costs"</code>, <code>"weights"</code>, or <code>"all"</code>)</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -169,6 +181,8 @@
 <strong><code><a href="reference/linestrings_to_graph.html">linestrings_to_graph()</a></code></strong> - Convert LINESTRING geometries to graph data frame</li>
 <li>
 <strong><code><a href="reference/create_undirected_graph.html">create_undirected_graph()</a></code></strong> - Convert directed graph to undirected with edge aggregation</li>
+<li>
+<strong><code><a href="reference/consolidate_graph.html">consolidate_graph()</a></code></strong> - Consolidate graph by removing intermediate nodes and merging connecting edges</li>
 <li>
 <strong><code><a href="reference/simplify_network.html">simplify_network()</a></code></strong> - Simplify network by keeping only edges traversed by shortest paths</li>
 </ul>
@@ -187,34 +201,17 @@
 </div>
 </div>
 <div class="section level2">
-<h2 id="key-parameters">Key Parameters<a class="anchor" aria-label="anchor" href="#key-parameters"></a>
-</h2>
-<div class="section level3">
-<h3 id="run_assignment">
-<code>run_assignment()</code><a class="anchor" aria-label="anchor" href="#run_assignment"></a>
-</h3>
-<ul>
-<li>
-<strong><code>beta</code></strong> (default: -1): Path-sized logit parameter (beta_PSL)</li>
-<li>
-<strong><code>detour.max</code></strong> (default: 1.5): Maximum detour factor for alternative routes. Higher values consider more routes but increase computation time</li>
-<li>
-<strong><code>angle.max</code></strong> (default: 90): Maximum detour angle in degrees (two-sided)</li>
-<li>
-<strong><code>return.extra</code></strong>: Additional results to return (<code>"graph"</code>, <code>"dmat"</code>, <code>"paths"</code>, <code>"edges"</code>, <code>"costs"</code>, <code>"weights"</code>, or <code>"all"</code>)</li>
-</ul>
-</div>
-</div>
-<div class="section level2">
 <h2 id="example-workflow">Example Workflow<a class="anchor" aria-label="anchor" href="#example-workflow"></a>
 </h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://sebkrantz.github.io/flowr/">flowr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://fastverse.github.io/fastverse/" class="external-link">fastverse</a></span><span class="op">)</span></span>
+<span><span class="fu">fastverse_extend</span><span class="op">(</span><span class="va">flowr</span>, <span class="va">sf</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 1. Load network and zone nodes</span></span>
+<span><span class="co"># 1. Load network and OD zone nodes</span></span>
 <span><span class="va">network</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"data/network/base_network.shp"</span><span class="op">)</span></span>
-<span><span class="va">zone_nodes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"data/zone_nodes/network_nodes.shp"</span><span class="op">)</span></span>
+<span><span class="va">od_zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"data/zone_nodes/network_nodes.shp"</span><span class="op">)</span></span>
+<span><span class="va">od_matrix</span> <span class="op">&lt;-</span> <span class="fu">fread</span><span class="op">(</span><span class="st">"data/od_matrices/od_container_flows.csv"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">qM</span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="kw">if</span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">od_matrix</span><span class="op">)</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">od_zones</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="kw"><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop</a></span><span class="op">(</span><span class="st">"zones and OD matrix must match"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 2. Convert network to graph</span></span>
 <span><span class="va">graph_df</span> <span class="op">&lt;-</span> <span class="va">network</span> <span class="op">|&gt;</span></span>
@@ -222,11 +219,8 @@
 <span>  <span class="fu"><a href="reference/create_undirected_graph.html">create_undirected_graph</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 3. Map zones to nearest network nodes</span></span>
-<span><span class="va">nodes_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nodes_from_graph.html">nodes_from_graph</a></span><span class="op">(</span><span class="va">graph_df</span><span class="op">)</span></span>
-<span><span class="va">nearest_nodes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_nearest_feature.html" class="external-link">st_nearest_feature</a></span><span class="op">(</span></span>
-<span>  <span class="va">zone_nodes</span>,</span>
-<span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html" class="external-link">st_as_sf</a></span><span class="op">(</span><span class="va">nodes_df</span>, coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"X"</span>, <span class="st">"Y"</span><span class="op">)</span>, crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<span><span class="va">nodes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nodes_from_graph.html">nodes_from_graph</a></span><span class="op">(</span><span class="va">graph_df</span>, return.sf <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">nearest_nodes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_nearest_feature.html" class="external-link">st_nearest_feature</a></span><span class="op">(</span><span class="va">od_zones</span>, <span class="va">nodes</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 4. Prepare OD matrix</span></span>
 <span><span class="va">od_matrix_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -236,15 +230,12 @@
 <span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">fsubset</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.finite</a></span><span class="op">(</span><span class="va">flow</span><span class="op">)</span> <span class="op">&amp;</span> <span class="va">flow</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 5. Run assignment</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_assignment.html">run_assignment</a></span><span class="op">(</span></span>
-<span>  graph_df <span class="op">=</span> <span class="va">graph_df</span>,</span>
-<span>  od_matrix_long <span class="op">=</span> <span class="va">od_matrix_long</span>,</span>
-<span>  return.extra <span class="op">=</span> <span class="st">"all"</span></span>
-<span><span class="op">)</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_assignment.html">run_assignment</a></span><span class="op">(</span><span class="va">graph_df</span>, <span class="va">od_matrix_long</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 6. Visualize results</span></span>
+<span><span class="co"># 6. Visualize results (optional)</span></span>
 <span><span class="va">network</span><span class="op">$</span><span class="va">final_flows</span> <span class="op">&lt;-</span> <span class="cn">NA_real_</span></span>
-<span><span class="va">network</span><span class="op">$</span><span class="va">final_flows</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">graph_df</span>, <span class="st">"group.starts"</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">final_flows</span></span></code></pre></div>
+<span><span class="va">network</span><span class="op">$</span><span class="va">final_flows</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">graph_df</span>, <span class="st">"group.starts"</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">final_flows</span></span>
+<span><span class="fu">mapview</span><span class="fu">::</span><span class="fu">mapview</span><span class="op">(</span><span class="va">network</span>, zcol <span class="op">=</span> <span class="st">"final_flows"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="authors">Authors<a class="anchor" aria-label="anchor" href="#authors"></a>

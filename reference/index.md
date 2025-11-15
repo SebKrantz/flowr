@@ -6,13 +6,15 @@
 
 ## Network Processing
 
-Utility functions to prepare networks graphs (represented as data
+Utility functions to prepare networks graphs (represented using data
 frames) for analysis with flowr.
 
 - [`linestrings_to_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_to_graph.md)
   : Convert Linestring to Graph
 - [`create_undirected_graph()`](https://sebkrantz.github.io/flowr/reference/create_undirected_graph.md)
   : Create Undirected Graph
+- [`consolidate_graph()`](https://sebkrantz.github.io/flowr/reference/consolidate_graph.md)
+  : Consolidate Graph
 - [`simplify_network()`](https://sebkrantz.github.io/flowr/reference/simplify_network.md)
   : Simplify Network
 
@@ -28,7 +30,7 @@ built-in route choice algorithm.
 
 ## Graph Utilities
 
-Utility functions to extract information from graphs (represented as
+Utility functions to extract information from graphs (represented using
 data frames).
 
 - [`nodes_from_graph()`](https://sebkrantz.github.io/flowr/reference/nodes_from_graph.md)

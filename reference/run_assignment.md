@@ -74,8 +74,8 @@ run_assignment(
 
   Character vector specifying additional results to return. Options
   include: `"graph"`, `"dmat"`, `"paths"` (most memory intensive),
-  `"edges"`, `"costs"`, `"weights"`. Use `"all"` to return all available
-  extra results.
+  `"edges"`, `"counts"`, `"costs"`, and `"weights"`. Use `"all"` to
+  return all available extra results.
 
 - precompute.dmat:
 

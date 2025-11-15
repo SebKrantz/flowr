@@ -11,6 +11,8 @@ provides utilities for network processing.
 — Convert LINESTRING geometries to graph  
 [`create_undirected_graph()`](https://sebkrantz.github.io/flowr/reference/create_undirected_graph.md)
 — Convert directed graph to undirected  
+[`consolidate_graph()`](https://sebkrantz.github.io/flowr/reference/consolidate_graph.md)
+— Consolidate graph by removing intermediate nodes  
 [`simplify_network()`](https://sebkrantz.github.io/flowr/reference/simplify_network.md)
 — Simplify network by keeping only traversed edges  
 
