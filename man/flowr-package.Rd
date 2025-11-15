@@ -14,6 +14,7 @@ traffic assignment and provides utilities for network processing.
 
  \code{\link[=linestrings_to_graph]{linestrings_to_graph()}} --- Convert LINESTRING geometries to graph\cr
  \code{\link[=create_undirected_graph]{create_undirected_graph()}} --- Convert directed graph to undirected\cr
+ \code{\link[=consolidate_graph]{consolidate_graph()}} --- Consolidate graph by removing intermediate nodes\cr
  \code{\link[=simplify_network]{simplify_network()}} --- Simplify network by keeping only traversed edges\cr
 
 
