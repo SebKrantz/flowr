@@ -24,8 +24,8 @@ provides powerful utilities for network processing.
 ## Installation
 
 ``` r
-# Install from source
-install.packages("flowr", repos = NULL, type = "source")
+# Install development version from GitHub
+remotes::install_github("SebKrantz/flowr")
 ```
 
 ## Dependencies
