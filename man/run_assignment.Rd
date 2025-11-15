@@ -43,7 +43,7 @@ in \code{graph_df}, or a numeric vector of edge costs with length equal to \code
 \item{angle.max}{Numeric (default: 90). Maximum detour angle (in degrees, two sided). I.e., nodes not within this angle measured against a straight line from origin to destination node will not be considered for detours.}
 
 \item{return.extra}{Character vector specifying additional results to return. Options include:
-\code{"graph"}, \code{"dmat"}, \code{"paths"} (most memory intensive), \code{"edges"}, \code{"costs"}, \code{"weights"}.
+\code{"graph"}, \code{"dmat"}, \code{"paths"} (most memory intensive), \code{"edges"}, \code{"counts"}, \code{"costs"}, and \code{"weights"}.
 Use \code{"all"} to return all available extra results.}
 
 \item{precompute.dmat}{description}
