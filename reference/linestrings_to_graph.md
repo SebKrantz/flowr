@@ -5,7 +5,12 @@ Convert Linestring to Graph
 ## Usage
 
 ``` r
-linestrings_to_graph(lines, digits = 6, keep.cols = NULL)
+linestrings_to_graph(
+  lines,
+  digits = 6,
+  keep.cols = is.atomic,
+  compute.length = TRUE
+)
 ```
 
 ## Arguments
@@ -23,6 +28,12 @@ linestrings_to_graph(lines, digits = 6, keep.cols = NULL)
 - keep.cols:
 
   Character vector of column names to keep from the input data frame.
+
+- compute.length:
+
+  Applies
+  [`st_length()`](https://r-spatial.github.io/sf/reference/geos_measures.html)
+  to and saves it as an additional column named `".length"`.
 
 ## Value
 
