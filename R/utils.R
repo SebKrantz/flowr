@@ -319,6 +319,15 @@ consolidate_graph <- function(graph_df, directed = FALSE,
   nodes_rm <- nodes_rm[[1L]][nodes_rm$N == 2L]
   if(length(keep.nodes)) nodes_rm <- nodes_rm[nodes_rm %!iin% keep.nodes]
 
+  # Early return if no nodes to consolidate
+  if(length(nodes_rm) == 0L) {
+    if(verbose) cat("No nodes to consolidate, returning graph\n")
+    gdf <- ss(graph_df, .keep, check = FALSE)
+    attr(gdf, "keep.edges") <- .keep
+    attr(gdf, "gid") <- seq_along(.keep)
+    return(gdf)
+  }
+
   # Find edges that connect these nodes
   from_ind <- fmatch(nodes_rm, gft$from)
   to_ind <- fmatch(nodes_rm, gft$to)
