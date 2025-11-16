@@ -232,28 +232,41 @@ dist_mat_from_graph <- function(graph_df, directed = FALSE, cost.column = "cost"
 
 
 #' @title Consolidate Graph
-#' @description Consolidate a graph by removing intermediate nodes (nodes that occur exactly twice) and optionally dropping loop and duplicate edges. This simplifies the network topology while preserving connectivity.
+#' @description Consolidate a graph by removing intermediate nodes (nodes that occur exactly twice) and optionally dropping loop, duplicate, and singleton edges. This simplifies the network topology while preserving connectivity.
 #'
 #' @param graph_df A data frame representing a graph with columns:
 #'   \code{from} and \code{to} (node IDs), and optionally other columns to preserve.
+#'   If coordinate columns (\code{FX}, \code{FY}, \code{TX}, \code{TY}) are present, they will be
+#'   preserved and updated based on the consolidated node coordinates.
 #' @param directed Logical (default: FALSE). Whether the graph is directed.
-#' @param drop.edges Character vector (default: \code{c("loop", "duplicate")}). Types of edges to drop:
-#'   \code{"loop"} removes self-loop (edges where from == to),
-#'   \code{"duplicate"} removes duplicate edges. Set to \code{NULL} to keep all edges.
+#' @param drop.edges Character vector (default: \code{c("loop", "duplicate", "single")}). Types of edges to drop:
+#'   \code{"loop"} removes self-loops (edges where from == to),
+#'   \code{"duplicate"} removes duplicate edges (same from-to pair),
+#'   \code{"single"} removes edges leading to singleton nodes (nodes that occur only once).
+#'   Set to \code{NULL} to keep all edges.
 #' @param consolidate Logical (default: TRUE). If TRUE, consolidates the graph by removing
 #'   intermediate nodes (nodes that occur exactly twice) and merging connecting edges.
 #'   If FALSE, only drops edges as specified in \code{drop.edges}.
 #' @param keep.nodes Numeric vector (optional). Node IDs to preserve during consolidation,
-#'   even if they occur exactly twice.
+#'   even if they occur exactly twice. Also used to preserve nodes when dropping singleton edges.
 #' @param fun.aggregate Function (default: \code{fmean}). Aggregation function to apply
 #'   to columns when consolidating edges. Must be a collapse package function
 #'   (e.g., \code{fmean}, \code{fsum}, \code{fmin}, \code{fmax}).
 #' @param \dots Further arguments passed to \code{fun.aggregate}.
-#' @param verbose Logical (default: TRUE). Whether to print messages about dropped edges.
+#' @param recursive Logical (default: TRUE). If TRUE, recursively consolidates the graph
+#'   until no further consolidation is possible. This ensures that long chains of intermediate
+#'   nodes are fully consolidated in a single call.
+#' @param verbose Logical (default: TRUE). Whether to print messages about dropped edges
+#'   and consolidation progress.
 #'
 #' @return A data frame representing the consolidated graph with:
 #'   \itemize{
-#'     \item All columns from \code{graph_df} (aggregated if consolidation occurred)
+#'     \item \code{line} - Line identifier (added as first column)
+#'     \item All columns from \code{graph_df} (aggregated if consolidation occurred),
+#'       excluding \code{from}, \code{to}, and optionally \code{FX}, \code{FY}, \code{TX}, \code{TY}
+#'       (which are re-added if present in original)
+#'     \item \code{from}, \code{to} - Node IDs (updated after consolidation)
+#'     \item Coordinate columns (\code{FX}, \code{FY}, \code{TX}, \code{TY}) if present in original
 #'     \item Attribute \code{"keep.edges"} - Indices of original edges that were kept
 #'     \item Attribute \code{"gid"} - Edge group IDs mapping consolidated edges to original edges
 #'   }
@@ -261,19 +274,26 @@ dist_mat_from_graph <- function(graph_df, directed = FALSE, cost.column = "cost"
 #' @details
 #' This function simplifies a graph by:
 #' \itemize{
-#'   \item \strong{Dropping edges}: Optionally removes self-loop and duplicate edges
+#'   \item \strong{Dropping edges}: Optionally removes self-loops, duplicate edges, and edges
+#'     leading to singleton nodes (nodes that appear only once in the graph)
 #'   \item \strong{Consolidating nodes}: Removes intermediate nodes (nodes that occur exactly twice)
 #'     by merging the two edges connected through them into a single longer edge
 #'   \item \strong{Aggregating attributes}: When edges are merged, numeric attributes are aggregated
 #'     using \code{fun.aggregate} (e.g., mean, sum, min, max)
+#'   \item \strong{Recursive consolidation}: If \code{recursive = TRUE}, the function continues
+#'     consolidating until no more nodes can be consolidated, ensuring complete simplification
 #' }
 #'
 #' Consolidation is useful for simplifying network topology while preserving connectivity.
 #' For example, if node B connects A->B and B->C, it will be removed and replaced with A->C.
-#' The process continues iteratively until no more nodes can be consolidated.
+#' With \code{recursive = TRUE}, long chains (A->B->C->D) are fully consolidated to A->D in
+#' a single call.
 #'
 #' For undirected graphs, the algorithm also handles cases where a node appears twice
-#' as either origin or destination.
+#' as either origin or destination (circular cases).
+#'
+#' If coordinate columns (\code{FX}, \code{FY}, \code{TX}, \code{TY}) are present in the input,
+#' they are preserved and updated based on the consolidated node coordinates from the original graph.
 #'
 #' @seealso \link{create_undirected_graph} \link{simplify_network} \link{flowr-package}
 #'
