@@ -4,18 +4,18 @@
 \alias{nodes_from_graph}
 \title{Extract Nodes from Graph}
 \usage{
-nodes_from_graph(graph_df, return.sf = FALSE, crs = 4326)
+nodes_from_graph(graph_df, sf = FALSE, crs = 4326)
 }
 \arguments{
 \item{graph_df}{A data frame representing a graph with columns:
 \code{from}, \code{to}, \code{FX}, \code{FY}, \code{TX}, \code{TY}.}
 
-\item{return.sf}{Logical. If TRUE, returns result as an \code{sf} POINT object. Default: FALSE.}
+\item{sf}{Logical. If TRUE, returns result as an \code{sf} POINT object. Default: FALSE.}
 
 \item{crs}{Coordinate reference system for sf output; default is 4326.}
 }
 \value{
-A data frame (or sf object if \code{return.sf = TRUE}) with unique nodes and coordinates:
+A data frame (or sf object if \code{sf = TRUE}) with unique nodes and coordinates:
   \itemize{
     \item \code{node} - Node ID
     \item \code{X} - Node X-coordinate (typically longitude)

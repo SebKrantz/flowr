@@ -157,10 +157,10 @@ create_undirected_graph <- function(graph_df, cols.aggregate = "cost", fun.aggre
 #'
 #' @param graph_df A data frame representing a graph with columns:
 #'   \code{from}, \code{to}, \code{FX}, \code{FY}, \code{TX}, \code{TY}.
-#' @param return.sf Logical. If TRUE, returns result as an \code{sf} POINT object. Default: FALSE.
+#' @param sf Logical. If TRUE, returns result as an \code{sf} POINT object. Default: FALSE.
 #' @param crs Coordinate reference system for sf output; default is 4326.
 #'
-#' @return A data frame (or sf object if \code{return.sf = TRUE}) with unique nodes and coordinates:
+#' @return A data frame (or sf object if \code{sf = TRUE}) with unique nodes and coordinates:
 #'   \itemize{
 #'     \item \code{node} - Node ID
 #'     \item \code{X} - Node X-coordinate (typically longitude)
@@ -177,12 +177,12 @@ create_undirected_graph <- function(graph_df, cols.aggregate = "cost", fun.aggre
 #' @importFrom collapse rowbind fselect funique
 #' @importFrom stats setNames
 #' @importFrom sf st_as_sf
-nodes_from_graph <- function(graph_df, return.sf = FALSE, crs = 4326) {
+nodes_from_graph <- function(graph_df, sf = FALSE, crs = 4326) {
   nodes <- rowbind(graph_df |> fselect(from, FX, FY),
                    graph_df |> fselect(to, TX, TY), use.names = FALSE) |>
     setNames(c("node", "X", "Y")) |>
     funique(cols = "node", sort = TRUE)
-  if(return.sf) return(st_as_sf(nodes, coords = c("X", "Y"), crs = crs))
+  if(sf) return(st_as_sf(nodes, coords = c("X", "Y"), crs = crs))
   nodes
 }
 
@@ -520,7 +520,7 @@ consolidate_graph <- function(graph_df, directed = FALSE,
 
   if(any(nam_rm[3:6] %in% nam)) {
     if(verbose) cat("Joining node coordinates back to consolidated graph\n")
-    nodes <- nodes_from_graph(graph_df, return.sf = FALSE)
+    nodes <- nodes_from_graph(graph_df, sf = FALSE)
     if(any(nam_rm[3:4] %in% nam)) gdf <- join(gdf, setNames(nodes, c("from", "FX", "FY")), on = "from", verbose = 0L) |> colorder(from, FX, FY)
     if(any(nam_rm[5:6] %in% nam)) gdf <- join(gdf, setNames(nodes, c("to", "TX", "TY")), on = "to", verbose = 0L) |> colorder(to, TX, TY, pos = "after")
   }

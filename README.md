@@ -67,7 +67,7 @@ graph_df <- st_read("data/network.shp") |>
 
 # Read zone centroids and get nearest nodes
 od_zones <- st_read("data/od_zones.shp") |> st_centroid()
-nodes <- nodes_from_graph(graph_df, return.sf = TRUE)
+nodes <- nodes_from_graph(graph_df, sf = TRUE)
 nearest_nodes <- st_nearest_feature(od_zones, nodes)
 
 # Consolidate Graph (optional)
@@ -124,7 +124,7 @@ graph_df <- network |>
   create_undirected_graph()
 
 # 3. Map zones to nearest network nodes
-nodes <- nodes_from_graph(graph_df, return.sf = TRUE)
+nodes <- nodes_from_graph(graph_df, sf = TRUE)
 nearest_nodes <- st_nearest_feature(od_zones, nodes)
 
 # 4. Prepare OD matrix
