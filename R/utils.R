@@ -499,6 +499,9 @@ consolidate_graph <- function(graph_df, directed = FALSE,
     }
   }
 
+  attr(gdf, "keep.edges") <- .keep
+  attr(gdf, "gid") <- gid
+
   if(recursive && fnrow(gdf)) {
     prev_fnrow <- fnrow(gdf) + 1L
     while(prev_fnrow > (nrow_gdf <- fnrow(gdf))) {
@@ -526,8 +529,6 @@ consolidate_graph <- function(graph_df, directed = FALSE,
   }
 
   add_vars(gdf, pos = "front") <- list(line = seq_row(gdf))
-  attr(gdf, "keep.edges") <- .keep
-  attr(gdf, "gid") <- gid
   gdf
 }
 
