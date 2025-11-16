@@ -10,7 +10,6 @@ consolidate_graph(
   drop.edges = c("loop", "duplicate", "single"),
   consolidate = TRUE,
   keep.nodes = NULL,
-  fun.aggregate = fmean,
   ...,
   recursive = TRUE,
   verbose = TRUE
@@ -37,11 +36,7 @@ If FALSE, only drops edges as specified in \code{drop.edges}.}
 \item{keep.nodes}{Numeric vector (optional). Node IDs to preserve during consolidation,
 even if they occur exactly twice. Also used to preserve nodes when dropping singleton edges.}
 
-\item{fun.aggregate}{Function (default: \code{fmean}). Aggregation function to apply
-to columns when consolidating edges. Must be a collapse package function
-(e.g., \code{fmean}, \code{fsum}, \code{fmin}, \code{fmax}).}
-
-\item{\dots}{Further arguments passed to \code{fun.aggregate}.}
+\item{\dots}{Arguments passed to \code{\link[collapse]{collap}()} for aggregation across consolidated edges. The defaults are \code{FUN = fmean} for numeric columns and \code{catFUN = fmode} for categorical columns. Select columns using \code{cols} or use argument \code{custom = list(fmean = cols1, fsum = cols2, fmode = cols3)} to map different columns to specific aggregation functions. It is highly recommended to weight the aggregation (using \code{w = ~ weight_col}) by the length/cost of the edges.}
 
 \item{recursive}{Logical (default: TRUE). If TRUE, recursively consolidates the graph
 until no further consolidation is possible. This ensures that long chains of intermediate
@@ -73,8 +68,8 @@ This function simplifies a graph by:
     leading to singleton nodes (nodes that appear only once in the graph)
   \item \strong{Consolidating nodes}: Removes intermediate nodes (nodes that occur exactly twice)
     by merging the two edges connected through them into a single longer edge
-  \item \strong{Aggregating attributes}: When edges are merged, numeric attributes are aggregated
-    using \code{fun.aggregate} (e.g., mean, sum, min, max)
+  \item \strong{Aggregating attributes}: When edges are merged, attributes/columns are aggregated
+    using \code{\link[collapse]{collap}()}. The default aggregation is mean for numeric columns and mode for categorical columns.
   \item \strong{Recursive consolidation}: If \code{recursive = TRUE}, the function continues
     consolidating until no more nodes can be consolidated, ensuring complete simplification
 }

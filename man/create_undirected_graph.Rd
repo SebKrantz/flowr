@@ -4,26 +4,14 @@
 \alias{create_undirected_graph}
 \title{Create Undirected Graph}
 \usage{
-create_undirected_graph(
-  graph_df,
-  cols.aggregate = "cost",
-  fun.aggregate = fmean,
-  ...
-)
+create_undirected_graph(graph_df, ...)
 }
 \arguments{
 \item{graph_df}{A data frame representing a directed graph with columns:
 \code{from}, \code{to}, \code{line}, \code{FX}, \code{FY}, \code{TX}, \code{TY},
 and any columns specified in \code{cols.aggregate}.}
 
-\item{cols.aggregate}{Character vector (default: "cost"). Column names to aggregate
-when collapsing duplicate edges.}
-
-\item{fun.aggregate}{Function (default: \code{fmean}). Aggregation function to apply
-to columns specified in \code{cols.aggregate}. Must be a collapse package function
-(e.g., \code{fmean}, \code{fsum}, \code{fmin}, \code{fmax}).}
-
-\item{\dots}{Further arguments to pass to \code{fun.aggregate}.}
+\item{\dots}{Arguments passed to \code{\link[collapse]{collap}()} for aggregation across duplicated (diretional) edges. The defaults are \code{FUN = fmean} for numeric columns and \code{catFUN = fmode} for categorical columns. Select columns using \code{cols} or use argument \code{custom = list(fmean = cols1, fsum = cols2, fmode = cols3)} to map different columns to specific aggregation functions. You can weight the aggregation (using \code{w = ~ weight_col}).}
 }
 \value{
 A data frame representing an undirected graph with:
@@ -35,7 +23,7 @@ A data frame representing an undirected graph with:
     \item \code{FY} - Starting node Y-coordinate (first value from duplicates)
     \item \code{TX} - Ending node X-coordinate (first value from duplicates)
     \item \code{TY} - Ending node Y-coordinate (first value from duplicates)
-    \item Aggregated columns as specified in \code{cols.aggregate}
+    \item Aggregated columns
   }
 }
 \description{
@@ -48,7 +36,6 @@ This function converts a directed graph to an undirected graph by:
   \item Collapsing duplicate edges (same \code{from} and \code{to} nodes)
   \item For spatial/identifier columns (\code{line}, \code{FX}, \code{FY}, \code{TX}, \code{TY}),
     taking the first value from duplicates
-  \item For aggregation columns (specified in \code{cols.aggregate}), applying the
-    specified aggregation function (e.g., mean, sum, min, max)
+  \item For aggregation columns, \code{\link[collapse]{collap}()} will be applied.
 }
 }
