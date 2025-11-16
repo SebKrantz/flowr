@@ -5,7 +5,7 @@ Extract unique nodes with their coordinates from a graph data frame.
 ## Usage
 
 ``` r
-nodes_from_graph(graph_df, return.sf = FALSE, crs = 4326)
+nodes_from_graph(graph_df, sf = FALSE, crs = 4326)
 ```
 
 ## Arguments
@@ -15,7 +15,7 @@ nodes_from_graph(graph_df, return.sf = FALSE, crs = 4326)
   A data frame representing a graph with columns: `from`, `to`, `FX`,
   `FY`, `TX`, `TY`.
 
-- return.sf:
+- sf:
 
   Logical. If TRUE, returns result as an `sf` POINT object. Default:
   FALSE.
@@ -26,7 +26,7 @@ nodes_from_graph(graph_df, return.sf = FALSE, crs = 4326)
 
 ## Value
 
-A data frame (or sf object if `return.sf = TRUE`) with unique nodes and
+A data frame (or sf object if `sf = TRUE`) with unique nodes and
 coordinates:
 
 - `node` - Node ID

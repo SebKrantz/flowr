@@ -6,12 +6,7 @@ aggregating duplicate connections.
 ## Usage
 
 ``` r
-create_undirected_graph(
-  graph_df,
-  cols.aggregate = "cost",
-  fun.aggregate = fmean,
-  ...
-)
+create_undirected_graph(graph_df, ...)
 ```
 
 ## Arguments
@@ -22,20 +17,16 @@ create_undirected_graph(
   `line`, `FX`, `FY`, `TX`, `TY`, and any columns specified in
   `cols.aggregate`.
 
-- cols.aggregate:
-
-  Character vector (default: "cost"). Column names to aggregate when
-  collapsing duplicate edges.
-
-- fun.aggregate:
-
-  Function (default: `fmean`). Aggregation function to apply to columns
-  specified in `cols.aggregate`. Must be a collapse package function
-  (e.g., `fmean`, `fsum`, `fmin`, `fmax`).
-
 - ...:
 
-  Further arguments to pass to `fun.aggregate`.
+  Arguments passed to
+  [`collap()`](https://sebkrantz.github.io/collapse/reference/collap.html)
+  for aggregation across duplicated (diretional) edges. The defaults are
+  `FUN = fmean` for numeric columns and `catFUN = fmode` for categorical
+  columns. Select columns using `cols` or use argument
+  `custom = list(fmean = cols1, fsum = cols2, fmode = cols3)` to map
+  different columns to specific aggregation functions. You can weight
+  the aggregation (using `w = ~ weight_col`).
 
 ## Value
 
@@ -55,7 +46,7 @@ A data frame representing an undirected graph with:
 
 - `TY` - Ending node Y-coordinate (first value from duplicates)
 
-- Aggregated columns as specified in `cols.aggregate`
+- Aggregated columns
 
 ## Details
 
@@ -68,5 +59,6 @@ This function converts a directed graph to an undirected graph by:
 - For spatial/identifier columns (`line`, `FX`, `FY`, `TX`, `TY`),
   taking the first value from duplicates
 
-- For aggregation columns (specified in `cols.aggregate`), applying the
-  specified aggregation function (e.g., mean, sum, min, max)
+- For aggregation columns,
+  [`collap()`](https://sebkrantz.github.io/collapse/reference/collap.html)
+  will be applied.
