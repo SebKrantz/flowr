@@ -412,10 +412,10 @@ consolidate_graph <- function(graph_df, directed = FALSE,
           ind <- which(gft$from %!in% nodes & gft$to %!in% nodes)
           dropped <- fnrow(gft) - length(ind)
           if(dropped > 0L) {
-            if(verbose) cat(sprintf("Dropped %d edges leading to singleton nodes after consolidation\n", dropped))
+            if(verbose) cat(sprintf("Dropped %d edges leading to singleton nodes\n", dropped))
             keep <<- keep[ind]
-            gid <- gid[ind]
-            gft <- ss(gft, ind, check = FALSE)
+            gid <<- gid[ind]
+            gft <<- ss(gft, ind, check = FALSE)
             next
           }
         }
@@ -423,24 +423,19 @@ consolidate_graph <- function(graph_df, directed = FALSE,
 
       if(!anyv(degree_table$deg_total, 2L)) break
 
-      if(!directed) {
+      if(directed) {
+        nodes <- degree_table$node[degree_table$deg_from == 1L & degree_table$deg_to == 1L]
+        if(length(keep.nodes)) nodes <- nodes[nodes %!iin% keep.nodes]
+        if(!length(nodes)) break
+      } else {
         nodes <- degree_table$node[degree_table$deg_total %==% 2L]
         if(length(keep.nodes)) nodes <- nodes[nodes %!iin% keep.nodes]
         if(!length(nodes)) break
         idx <- fmatch(nodes, degree_table$node)
         need_orientation <- nodes[degree_table$deg_from[idx] == 2L | degree_table$deg_to[idx] == 2L]
         if(length(need_orientation)) if(!orient_undirected_nodes(need_orientation)) stop("Failed to orient undirected nodes for consolidation; please verify the input graph.")
-        if(!merge_linear_nodes(nodes)) stop("Failed to consolidate oriented undirected nodes; please verify the graph topology.")
-        consolidated_any <- TRUE
-        if(verbose) cat(sprintf("Consolidated %d intermediate nodes\n", length(nodes)))
-        if(!recursive) break
-        next
       }
-
-      nodes <- degree_table$node[degree_table$deg_from == 1L & degree_table$deg_to == 1L]
-      if(length(keep.nodes)) nodes <- nodes[nodes %!iin% keep.nodes]
-      if(!length(nodes)) break
-      if(!merge_linear_nodes(nodes)) stop("Failed to consolidate eligible nodes; please verify the graph topology.")
+      if(!merge_linear_nodes(nodes)) stop("Failed to consolidate oriented undirected nodes; please verify the graph topology.")
       consolidated_any <- TRUE
       if(verbose) cat(sprintf("Consolidated %d intermediate nodes\n", length(nodes)))
       if(!recursive) break
@@ -478,10 +473,17 @@ consolidate_graph <- function(graph_df, directed = FALSE,
   }
 
   # Aggregation and joining coordinates
-  gdf <- ss(graph_df, keep, setdiff(names(graph_df), c("from", "to", "FX", "FY", "TX", "TY", "line")), check = FALSE)
+  nam <- names(graph_df)
+  nam_rm <- c("from", "to", "FX", "FY", "TX", "TY", "line")
+  gdf <- ss(graph_df, keep, nam[nam %!iin% nam_rm], check = FALSE)
+  if(verbose) {
+    cat("\nSUMMARY:\n")
+    cat("Removing", fnrow(graph_df)-length(keep), "edges prior to aggregation\n")
+    cat("Aggregating", fnrow(gdf), "edges down to", g$N.groups, "edges\n\n")
+  }
   gdf <- eval(substitute(collap(gdf, g, fun.aggregate, ...)))
   if(any(nam_rm[3:6] %in% nam)) {
-    nodes <- nodes_from_graph(graph_df, return.sf = FALSE)
+    nodes <- nodes_from_graph(graph_df, sf = FALSE)
     if(any(nam_rm[3:4] %in% nam)) gdf <- join(gdf, setNames(nodes, c("from", "FX", "FY")), on = "from", verbose = 0L) |> colorder(from, FX, FY)
     if(any(nam_rm[5:6] %in% nam)) gdf <- join(gdf, setNames(nodes, c("to", "TX", "TY")), on = "to", verbose = 0L) |> colorder(to, TX, TY, pos = "after")
   }
