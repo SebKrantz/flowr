@@ -232,14 +232,14 @@ dist_mat_from_graph <- function(graph_df, directed = FALSE, cost.column = "cost"
 
 
 #' @title Consolidate Graph
-#' @description Consolidate a graph by removing intermediate nodes (nodes that occur exactly twice) and optionally dropping loops and multiple edges. This simplifies the network topology while preserving connectivity.
+#' @description Consolidate a graph by removing intermediate nodes (nodes that occur exactly twice) and optionally dropping loop and duplicate edges. This simplifies the network topology while preserving connectivity.
 #'
 #' @param graph_df A data frame representing a graph with columns:
 #'   \code{from} and \code{to} (node IDs), and optionally other columns to preserve.
 #' @param directed Logical (default: FALSE). Whether the graph is directed.
-#' @param drop.edges Character vector (default: \code{c("loops", "multiple")}). Types of edges to drop:
-#'   \code{"loops"} removes self-loops (edges where from == to),
-#'   \code{"multiple"} removes duplicate edges. Set to \code{NULL} to keep all edges.
+#' @param drop.edges Character vector (default: \code{c("loop", "duplicate")}). Types of edges to drop:
+#'   \code{"loop"} removes self-loop (edges where from == to),
+#'   \code{"duplicate"} removes duplicate edges. Set to \code{NULL} to keep all edges.
 #' @param consolidate Logical (default: TRUE). If TRUE, consolidates the graph by removing
 #'   intermediate nodes (nodes that occur exactly twice) and merging connecting edges.
 #'   If FALSE, only drops edges as specified in \code{drop.edges}.
@@ -261,7 +261,7 @@ dist_mat_from_graph <- function(graph_df, directed = FALSE, cost.column = "cost"
 #' @details
 #' This function simplifies a graph by:
 #' \itemize{
-#'   \item \strong{Dropping edges}: Optionally removes self-loops and duplicate edges
+#'   \item \strong{Dropping edges}: Optionally removes self-loop and duplicate edges
 #'   \item \strong{Consolidating nodes}: Removes intermediate nodes (nodes that occur exactly twice)
 #'     by merging the two edges connected through them into a single longer edge
 #'   \item \strong{Aggregating attributes}: When edges are merged, numeric attributes are aggregated
@@ -278,38 +278,50 @@ dist_mat_from_graph <- function(graph_df, directed = FALSE, cost.column = "cost"
 #' @seealso \link{create_undirected_graph} \link{simplify_network} \link{flowr-package}
 #'
 #' @export
-#' @importFrom collapse alloc fnrow get_vars anyv setv ss seq_row fcountv fduplicated fmatch whichNA allNA ffirst group fmin fmax GRP fsubset collap %!iin%
+#' @importFrom collapse alloc fnrow get_vars anyv setv ss seq_row fcountv fduplicated fmatch whichNA allNA ffirst group fmin fmax GRP fsubset collap %!in% %!iin% join colorder GRPN qtab
+#' @importFrom stats setNames
 consolidate_graph <- function(graph_df, directed = FALSE,
-                              drop.edges = c("loops", "multiple"),
+                              drop.edges = c("loop", "duplicate", "single"),
                               consolidate = TRUE, keep.nodes = NULL,
                               fun.aggregate = fmean, ...,
+                              recursive = TRUE,
                               verbose = TRUE) {
 
-  .keep <- alloc(TRUE, fnrow(graph_df))
+  .keep <- seq_row(graph_df)
   gft <- get_vars(graph_df, c("from", "to")) |> unclass()
-  if(anyv(drop.edges, "loops")) {
-    if(any(loop <- gft$from == gft$to)) {
-      setv(.keep, loop, FALSE, vind1 = TRUE)
-      gft <- ss(gft, .keep)
-      if(verbose) cat(sprintf("Dropped %d loop edges\n", length(.keep) - sum(.keep)))
-    }
-  }
-  if(anyv(drop.edges, "multiple")) {
-    if(any(dup <- fduplicated(gft))) {
-      .keep[.keep][dup] <- FALSE
-      gft <- ss(gft, !dup)
-      if(verbose) cat(sprintf("Dropped %d multiple edges\n", sum(dup)))
-    }
+
+  if(anyv(drop.edges, "loop") && any(loop <- gft$from == gft$to)) {
+    .keep <- .keep[!loop]
+    gft <- ss(gft, .keep, check = FALSE)
+    if(verbose) cat(sprintf("Dropped %d loop edges\n", sum(loop)))
   }
 
-  .keep <- which(.keep)
+  if(anyv(drop.edges, "duplicate") && any(dup <- fduplicated(gft))) {
+    .keep <- .keep[!dup]
+    gft <- ss(gft, !dup)
+    if(verbose) cat(sprintf("Dropped %d duplicate edges\n", sum(dup)))
+  }
+
+  if(anyv(drop.edges, "single")) {
+    nodes_rm <- unclass(fcountv(do.call(c, gft)))
+    if(anyv(nodes_rm$N, 1L)) {
+      nodes_rm <- nodes_rm[[1L]][nodes_rm$N == 1L]
+      if(length(keep.nodes)) nodes_rm <- nodes_rm[nodes_rm %!iin% keep.nodes]
+      if(length(nodes_rm)) {
+        ind <- which(gft$from %!in% nodes_rm & gft$to %!in% nodes_rm)
+        if(verbose) cat(sprintf("Dropped %d edges leading to singleton nodes\n", fnrow(gft) - length(ind)))
+        .keep <- .keep[ind]
+        gft <- ss(gft, ind, check = FALSE)
+      }
+    }
+  }
 
   if(!consolidate) {
     gdf <- ss(graph_df, .keep, check = FALSE)
     attr(gdf, "keep.edges") <- .keep
     return(gdf)
   }
-  # TODO: How does not dropping loop or multiple edges affect the algorithm?
+  # TODO: How does not dropping loop or duplicate edges affect the algorithm?
 
   # Get unique ID for each edge
   gid <- seq_row(gft)
@@ -324,7 +336,6 @@ consolidate_graph <- function(graph_df, directed = FALSE,
     if(verbose) cat("No nodes to consolidate, returning graph\n")
     gdf <- ss(graph_df, .keep, check = FALSE)
     attr(gdf, "keep.edges") <- .keep
-    attr(gdf, "gid") <- seq_along(.keep)
     return(gdf)
   }
 
@@ -333,45 +344,60 @@ consolidate_graph <- function(graph_df, directed = FALSE,
   to_ind <- fmatch(nodes_rm, gft$to)
 
   # Excluding cases where the same node is two times origin or destination (at least on directed graph)
-  if(anyNA(from_ind)) to_ind[is.na(from_ind)] <- NA
+  if(anyNA(from_ind)) to_ind[is.na(from_ind)] <- NA_integer_
   if(anyNA(to_ind)) {
     nna <- whichNA(to_ind, invert = TRUE)
     from_ind <- from_ind[nna]
     to_ind <- to_ind[nna]
-  }
+    nodes_circ <- nodes_rm[-nna]
+    nodes_rm <- nodes_rm[nna]
+  } else nodes_circ <- integer()
 
   # Replace from edge ID with to edge ID and create longer edge
   gid[from_ind] <- gid[to_ind]
   gft$to[to_ind] <- gft$to[from_ind]
-  gft$from[from_ind] <- NA
+  gft$from[from_ind] <- NA_integer_ # These edges are now removed
   while(!allNA(to_ind <- fmatch(nodes_rm, gft$to))) {
     nna <- whichNA(to_ind, invert = TRUE)
-    from_ind <- from_ind[nna]
-    to_ind <- to_ind[nna]
-    gid[from_ind] <- gid[to_ind]
-    gft$to[to_ind] <- gft$to[from_ind]
+    from_ind_tmp <- from_ind[nna]
+    to_ind <- to_ind[nna] # TODO: also subset nodes_rm?
+    gid[from_ind_tmp] <- gid[to_ind]
+    gft$to[to_ind] <- gft$to[from_ind_tmp]
   }
   ffirst(gft$from, gid, "fill", set = TRUE)
 
   # For undirected graph, also eliminate nodes that are two times origin/destination
-  if(!directed) {
-    if(!allNA(from_ind <- fmatch(gft$from, nodes_rm))) {
-      nafr <- is.na(from_ind); gfr <- group(from_ind)
-      setv(gid, nafr, fmin(gid, gfr, "fill"), vind1 = TRUE, invert = TRUE)
-      setv(gft$from, nafr, fmin(gft$to, gfr, "fill"), vind1 = TRUE, invert = TRUE)
-      setv(gft$to, nafr, fmax(gft$to, gfr, "fill"), vind1 = TRUE, invert = TRUE)
+  if(!directed && length(nodes_circ)) {
+    froml <- !allNA(from_ind <- fmatch(gft$from, nodes_circ))
+    if(froml) {
+      nnafr <- whichNA(from_ind, invert = TRUE)
+      gfr <- group(from_ind)
+      gfr_gid_min <- fmin(gid, gfr, "fill")
+      gfr_to_min <- fmin(gft$to, gfr, "fill")
+      gfr_to_max <- fmax(gft$to, gfr, "fill")
     }
-    if(!allNA(to_ind <- fmatch(gft$to, nodes_rm))) {
-      nato <- is.na(to_ind); gto <- group(to_ind)
-      setv(gid, nato, fmin(gid, gto, "fill"), vind1 = TRUE, invert = TRUE)
-      setv(gft$from, nato, fmin(gft$from, gto, "fill"), vind1 = TRUE, invert = TRUE)
-      setv(gft$to, nato, fmax(gft$from, gto, "fill"), vind1 = TRUE, invert = TRUE)
+    if(!allNA(to_ind <- fmatch(gft$to, nodes_circ))) {
+      nnato <- whichNA(to_ind, invert = TRUE)
+      gto <- group(to_ind)
+      setv(gid, nnato, fmin(gid, gto, "fill"), vind1 = TRUE)
+      setv(gft$from, nnato, fmin(gft$from, gto, "fill"), vind1 = TRUE)
+      setv(gft$to, nnato, fmax(gft$from, gto, "fill"), vind1 = TRUE)
     }
+    if(froml) {
+      setv(gid, nnafr, gfr_gid_min, vind1 = TRUE)
+      setv(gft$from, nnafr, gfr_to_min, vind1 = TRUE)
+      setv(gft$to, nnafr, gfr_to_max, vind1 = TRUE)
+    }
+  }
+
+  if(verbose) {
+    cat("Node Counts Table:\n")
+    print(qtab(GRPN(do.call(c, gft)), dnn = NULL)[1:6])
   }
   # These edges are now removed
   # setv(gft, from_ind, NA, vind1 = TRUE)
   # Aggregation
-  if(anyv(drop.edges, "multiple")) {
+  if(anyv(drop.edges, "duplicate")) {
     g <- GRP(gft, sort = TRUE)
     gid <- fmatch(gid, gid[g$group.starts], count = TRUE)
   } else {
@@ -381,8 +407,31 @@ consolidate_graph <- function(graph_df, directed = FALSE,
     g$groups <- g$groups[1:2]
     g$group.vars <- g$group.vars[1:2]
   }
-  gdf <- fsubset(graph_df, .keep, -from, -to)
+  nam_rm <- c("from", "to", "FX", "FY", "TX", "TY", "line")
+  nam <- names(graph_df)
+  gdf <- ss(graph_df, .keep, nam[nam %!iin% nam_rm])
   gdf <- eval(substitute(collap(gdf, g, fun.aggregate, ...)))
+
+  if(recursive) {
+    prev_fnrow <- fnrow(gdf) + 1L
+    while(prev_fnrow > (nrow_gdf <- fnrow(gdf))) {
+      prev_fnrow <- nrow_gdf
+      gdf <- consolidate_graph(gdf, directed = directed,
+                               drop.edges = drop.edges,
+                               consolidate = TRUE,
+                               keep.nodes = keep.nodes,
+                               fun.aggregate = fun.aggregate, ...,
+                               recursive = FALSE,
+                               verbose = verbose)
+    }
+  }
+
+  if(any(nam_rm[3:6] %in% nam)) {
+    nodes <- nodes_from_graph(graph_df, return.sf = FALSE)
+    if(any(nam_rm[3:4] %in% nam)) gdf <- join(gdf, setNames(nodes, c("from", "FX", "FY")), on = "from", verbose = 0L) |> colorder(from, FX, FY)
+    if(any(nam_rm[5:6] %in% nam)) gdf <- join(gdf, setNames(nodes, c("to", "TX", "TY")), on = "to", verbose = 0L) |> colorder(to, TX, TY, pos = "after")
+  }
+  add_vars(gdf, pos = "front") <- list(line = seq_row(gdf))
   attr(gdf, "keep.edges") <- .keep
   attr(gdf, "gid") <- gid
   gdf
