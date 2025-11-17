@@ -33,6 +33,8 @@ built-in route choice algorithm.
 Utility functions to extract information from graphs (represented using
 data frames).
 
+- [`normalize_graph()`](https://sebkrantz.github.io/flowr/reference/normalize_graph.md)
+  : Normalize Graph Node IDs
 - [`nodes_from_graph()`](https://sebkrantz.github.io/flowr/reference/nodes_from_graph.md)
   : Extract Nodes from Graph
 - [`linestrings_from_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_from_graph.md)

@@ -70,7 +70,7 @@ library(sf)
 
 # Read network from shapefile and create undirected graph (optional)
 graph_df <- st_read("data/network.shp") |> 
-  linestrings_to_graph(keep.cols = "cost") |>
+  linestrings_to_graph() |>
   create_undirected_graph()
 
 # Read zone centroids and get nearest nodes
@@ -120,6 +120,8 @@ graph_df <- simplify_network(graph_df, nearest_nodes, cost.column = "cost")
 
 - **[`nodes_from_graph()`](https://sebkrantz.github.io/flowr/reference/nodes_from_graph.md)** -
   Extract unique nodes with coordinates from graph
+- **[`normalize_graph()`](https://sebkrantz.github.io/flowr/reference/normalize_graph.md)** -
+  Normalize node IDs to consecutive integers starting from 1
 - **[`linestrings_from_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_from_graph.md)** -
   Convert graph to LINESTRING geometries
 - **[`dist_mat_from_graph()`](https://sebkrantz.github.io/flowr/reference/dist_mat_from_graph.md)** -
@@ -139,7 +141,7 @@ if(!all(dim(od_matrix) == nrow(od_zones))) stop("zones and OD matrix must match"
 
 # 2. Convert network to graph
 graph_df <- network |>
-  linestrings_to_graph(keep.cols = "cost") |>
+  linestrings_to_graph() |>
   create_undirected_graph()
 
 # 3. Map zones to nearest network nodes
@@ -214,6 +216,8 @@ built-in route choice algorithm.
 Utility functions to extract information from graphs (represented using
 data frames).
 
+- [`normalize_graph()`](https://sebkrantz.github.io/flowr/reference/normalize_graph.md)
+  : Normalize Graph Node IDs
 - [`nodes_from_graph()`](https://sebkrantz.github.io/flowr/reference/nodes_from_graph.md)
   : Extract Nodes from Graph
 - [`linestrings_from_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_from_graph.md)

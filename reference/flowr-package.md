@@ -25,6 +25,8 @@ provides utilities for network processing.
 
 [`nodes_from_graph()`](https://sebkrantz.github.io/flowr/reference/nodes_from_graph.md)
 — Extract unique nodes from graph  
+[`normalize_graph()`](https://sebkrantz.github.io/flowr/reference/normalize_graph.md)
+— Normalize node IDs to consecutive integers  
 [`linestrings_from_graph()`](https://sebkrantz.github.io/flowr/reference/linestrings_from_graph.md)
 — Convert graph to LINESTRING geometries  
 [`dist_mat_from_graph()`](https://sebkrantz.github.io/flowr/reference/dist_mat_from_graph.md)

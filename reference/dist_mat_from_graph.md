@@ -30,7 +30,8 @@ dist_mat_from_graph(graph_df, directed = FALSE, cost.column = "cost", ...)
 - ...:
 
   Additional arguments passed to
-  [`distances()`](https://r.igraph.org/reference/distances.html).
+  [`distances()`](https://r.igraph.org/reference/distances.html), such
+  as `v` (from) and `to` to compute paths between specific nodes.
 
 ## Value
 

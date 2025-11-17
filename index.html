@@ -127,7 +127,7 @@
 <span></span>
 <span><span class="co"># Read network from shapefile and create undirected graph (optional)</span></span>
 <span><span class="va">graph_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"data/network.shp"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="reference/linestrings_to_graph.html">linestrings_to_graph</a></span><span class="op">(</span>keep.cols <span class="op">=</span> <span class="st">"cost"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/linestrings_to_graph.html">linestrings_to_graph</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/create_undirected_graph.html">create_undirected_graph</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Read zone centroids and get nearest nodes</span></span>
@@ -194,6 +194,8 @@
 <li>
 <strong><code><a href="reference/nodes_from_graph.html">nodes_from_graph()</a></code></strong> - Extract unique nodes with coordinates from graph</li>
 <li>
+<strong><code><a href="reference/normalize_graph.html">normalize_graph()</a></code></strong> - Normalize node IDs to consecutive integers starting from 1</li>
+<li>
 <strong><code><a href="reference/linestrings_from_graph.html">linestrings_from_graph()</a></code></strong> - Convert graph to LINESTRING geometries</li>
 <li>
 <strong><code><a href="reference/dist_mat_from_graph.html">dist_mat_from_graph()</a></code></strong> - Compute distance matrix for all node pairs</li>
@@ -215,7 +217,7 @@
 <span></span>
 <span><span class="co"># 2. Convert network to graph</span></span>
 <span><span class="va">graph_df</span> <span class="op">&lt;-</span> <span class="va">network</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/linestrings_to_graph.html">linestrings_to_graph</a></span><span class="op">(</span>keep.cols <span class="op">=</span> <span class="st">"cost"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/linestrings_to_graph.html">linestrings_to_graph</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/create_undirected_graph.html">create_undirected_graph</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 3. Map zones to nearest network nodes</span></span>

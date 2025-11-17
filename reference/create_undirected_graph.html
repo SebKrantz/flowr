@@ -49,9 +49,8 @@
 
 
 <dl><dt id="arg-graph-df">graph_df<a class="anchor" aria-label="anchor" href="#arg-graph-df"></a></dt>
-<dd><p>A data frame representing a directed graph with columns:
-<code>from</code>, <code>to</code>, <code>line</code>, <code>FX</code>, <code>FY</code>, <code>TX</code>, <code>TY</code>,
-and any columns specified in <code>cols.aggregate</code>.</p></dd>
+<dd><p>A data frame representing a directed graph including columns:
+<code>from</code>, <code>to</code>, and (optionally) <code>line</code>, <code>FX</code>, <code>FY</code>, <code>TX</code>, <code>TY</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -60,9 +59,9 @@ and any columns specified in <code>cols.aggregate</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame representing an undirected graph with:</p><ul><li><p><code>from</code> - Starting node ID (normalized to be &lt; <code>to</code>)</p></li>
+    <p>A data frame representing an undirected graph with:</p><ul><li><p><code>line</code> - Line identifier (first value from duplicates)</p></li>
+<li><p><code>from</code> - Starting node ID (normalized to be &lt; <code>to</code>)</p></li>
 <li><p><code>to</code> - Ending node ID (normalized to be &gt; <code>from</code>)</p></li>
-<li><p><code>line</code> - Line identifier (first value from duplicates)</p></li>
 <li><p><code>FX</code> - Starting node X-coordinate (first value from duplicates)</p></li>
 <li><p><code>FY</code> - Starting node Y-coordinate (first value from duplicates)</p></li>
 <li><p><code>TX</code> - Ending node X-coordinate (first value from duplicates)</p></li>

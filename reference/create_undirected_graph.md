@@ -13,9 +13,8 @@ create_undirected_graph(graph_df, ...)
 
 - graph_df:
 
-  A data frame representing a directed graph with columns: `from`, `to`,
-  `line`, `FX`, `FY`, `TX`, `TY`, and any columns specified in
-  `cols.aggregate`.
+  A data frame representing a directed graph including columns: `from`,
+  `to`, and (optionally) `line`, `FX`, `FY`, `TX`, `TY`.
 
 - ...:
 
@@ -32,11 +31,11 @@ create_undirected_graph(graph_df, ...)
 
 A data frame representing an undirected graph with:
 
+- `line` - Line identifier (first value from duplicates)
+
 - `from` - Starting node ID (normalized to be \< `to`)
 
 - `to` - Ending node ID (normalized to be \> `from`)
-
-- `line` - Line identifier (first value from duplicates)
 
 - `FX` - Starting node X-coordinate (first value from duplicates)
 
