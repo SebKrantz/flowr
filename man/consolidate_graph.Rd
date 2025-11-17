@@ -11,7 +11,7 @@ consolidate_graph(
   consolidate = TRUE,
   keep.nodes = NULL,
   ...,
-  recursive = TRUE,
+  recursive = "full",
   verbose = TRUE
 )
 }
@@ -38,8 +38,8 @@ even if they occur exactly twice. Also used to preserve nodes when dropping sing
 
 \item{\dots}{Arguments passed to \code{\link[collapse]{collap}()} for aggregation across consolidated edges. The defaults are \code{FUN = fmean} for numeric columns and \code{catFUN = fmode} for categorical columns. Select columns using \code{cols} or use argument \code{custom = list(fmean = cols1, fsum = cols2, fmode = cols3)} to map different columns to specific aggregation functions. It is highly recommended to weight the aggregation (using \code{w = ~ weight_col}) by the length/cost of the edges.}
 
-\item{recursive}{Logical (default: TRUE). If TRUE, recursively consolidates the graph
-until no further consolidation is possible. This ensures that long chains of intermediate
+\item{recursive}{One of \code{"none"/FALSE}, \code{"partial"} (recurse on dropping single edges and consolidation but only aggregate once), or \code{"full"/TRUE} (recursively consolidates and aggregates the graph
+until no further consolidation is possible). This ensures that long chains of intermediate
 nodes are fully consolidated in a single call.}
 
 \item{verbose}{Logical (default: TRUE). Whether to print messages about dropped edges
