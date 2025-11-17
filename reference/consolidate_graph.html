@@ -48,7 +48,7 @@
 <span>  consolidate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  keep.nodes <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  recursive <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  recursive <span class="op">=</span> <span class="st">"full"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -92,8 +92,8 @@ even if they occur exactly twice. Also used to preserve nodes when dropping sing
 
 
 <dt id="arg-recursive">recursive<a class="anchor" aria-label="anchor" href="#arg-recursive"></a></dt>
-<dd><p>Logical (default: TRUE). If TRUE, recursively consolidates the graph
-until no further consolidation is possible. This ensures that long chains of intermediate
+<dd><p>One of <code>"none"/FALSE</code>, <code>"partial"</code> (recurse on dropping single edges and consolidation but only aggregate once), or <code>"full"/TRUE</code> (recursively consolidates and aggregates the graph
+until no further consolidation is possible). This ensures that long chains of intermediate
 nodes are fully consolidated in a single call.</p></dd>
 
 

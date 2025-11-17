@@ -15,7 +15,7 @@ consolidate_graph(
   consolidate = TRUE,
   keep.nodes = NULL,
   ...,
-  recursive = TRUE,
+  recursive = "full",
   verbose = TRUE
 )
 ```
@@ -68,9 +68,11 @@ consolidate_graph(
 
 - recursive:
 
-  Logical (default: TRUE). If TRUE, recursively consolidates the graph
-  until no further consolidation is possible. This ensures that long
-  chains of intermediate nodes are fully consolidated in a single call.
+  One of `"none"/FALSE`, `"partial"` (recurse on dropping single edges
+  and consolidation but only aggregate once), or `"full"/TRUE`
+  (recursively consolidates and aggregates the graph until no further
+  consolidation is possible). This ensures that long chains of
+  intermediate nodes are fully consolidated in a single call.
 
 - verbose:
 
