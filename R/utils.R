@@ -333,7 +333,7 @@ normalize_graph <- function(graph_df) {
 #' @seealso \link{create_undirected_graph} \link{simplify_network} \link{flowr-package}
 #'
 #' @export
-#' @importFrom collapse fnrow get_vars anyv setv ss seq_row fcountv fduplicated fmatch whichv whichNA allNA ffirst GRP collap %!in% %!iin% join colorder funique.default %!=% %==% missing_cases qtab
+#' @importFrom collapse fnrow get_vars anyv setv ss seq_row fcountv fduplicated fmatch whichv whichNA allNA ffirst GRP collap %!in% %!iin% join colorderv funique.default %!=% %==% missing_cases qtab
 #' @importFrom stats setNames
 consolidate_graph <- function(graph_df, directed = FALSE,
                               drop.edges = c("loop", "duplicate", "single"),
@@ -342,8 +342,62 @@ consolidate_graph <- function(graph_df, directed = FALSE,
                               verbose = TRUE) {
 
   reci <- switch(as.character(recursive), none =, `FALSE` = 0L, partial = 1L, full =, `TRUE` = 2L,
-                stop("recursive needs to be one of 'none'/FALSE, 'partial', or 'full'/TRUE"))
+                 stop("recursive needs to be one of 'none'/FALSE, 'partial', or 'full'/TRUE"))
+
   if(length(attr(graph_df, "group.starts"))) attr(graph_df, "group.starts") <- NULL
+
+  nam <- names(graph_df)
+  nam_rm <- c("from", "to", "FX", "FY", "TX", "TY", "line")
+  nam_keep <- nam[nam %!iin% nam_rm]
+
+  res <- consolidate_graph_core(graph_df, directed = directed,
+                                drop.edges = drop.edges,
+                                consolidate = consolidate,
+                                keep.nodes = keep.nodes,
+                                reci = reci, nam_keep = nam_keep,
+                                verbose = verbose, ...)
+
+  if(length(attr(res, ".early.return"))) {
+    attr(res, ".early.return") <- NULL
+    return(res)
+  }
+
+  if(reci == 2L && fnrow(res)) {
+    prev_fnrow <- fnrow(graph_df)
+    while(prev_fnrow > (nrow_res <- fnrow(res))) {
+      prev_fnrow <- nrow_res
+      res <- consolidate_graph_core(res, directed = directed,
+                                    drop.edges = drop.edges,
+                                    consolidate = consolidate,
+                                    keep.nodes = keep.nodes,
+                                    reci = reci, nam_keep = nam_keep,
+                                    verbose = verbose, ...)
+    }
+  }
+
+  if(length(attr(res, ".early.return"))) attr(res, ".early.return") <- NULL
+
+  if(verbose) print(qtab(fcountv(c(res$from, res$to))$N, dnn = "Final node counts:"))
+
+  if(any(nam_rm[3:6] %in% nam)) {
+    nodes <- nodes_from_graph(graph_df, sf = FALSE)
+    if(any(nam_rm[3:4] %in% nam)) res <- join(res, setNames(nodes, c("from", "FX", "FY")), on = "from", verbose = 0L)
+    if(any(nam_rm[5:6] %in% nam)) res <- join(res, setNames(nodes, c("to", "TX", "TY")), on = "to", verbose = 0L)
+  }
+  add_vars(res, pos = "front") <- list(line = seq_row(res))
+
+  # Reordering columns
+  res <- colorderv(res, radixorderv(fmatch(names(res), nam)))
+  res
+}
+
+
+# Corec function that can be called recursively
+consolidate_graph_core <- function(graph_df, directed = FALSE,
+                              drop.edges = c("loop", "duplicate", "single"),
+                              consolidate = TRUE, keep.nodes = NULL, ...,
+                              reci, nam_keep, verbose = TRUE) {
+
   keep <- seq_row(graph_df) # Global variable tracking utilized edges
   gft <- get_vars(graph_df, c("from", "to")) |> unclass() # Local variable representing the current graph worked on
 
@@ -378,7 +432,8 @@ consolidate_graph <- function(graph_df, directed = FALSE,
 
   if(!consolidate) {
     res <- ss(graph_df, keep, check = FALSE)
-    attr(res, "keep.edges") <- keep
+    if(rec < 2L) attr(res, "keep.edges") <- keep
+    attr(res, ".early.return") <- TRUE
     return(res)
   }
   # TODO: How does not dropping loop or duplicate edges affect the algorithm?
@@ -474,8 +529,8 @@ consolidate_graph <- function(graph_df, directed = FALSE,
   if(!consolidated_any) {
     if(verbose) cat("No nodes to consolidate, returning graph\n")
     res <- ss(graph_df, keep, check = FALSE)
-    attr(res, "keep.edges") <- keep
-    if(reci == 2L) attr(res, ".recursion.completed") <- TRUE
+    if(reci < 2L) attr(res, "keep.edges") <- keep
+    attr(res, ".early.return") <- TRUE
     return(res)
   }
 
@@ -489,46 +544,16 @@ consolidate_graph <- function(graph_df, directed = FALSE,
   }
 
   # Aggregation
-  nam <- names(graph_df)
-  nam_rm <- c("from", "to", "FX", "FY", "TX", "TY", "line")
-  res <- ss(graph_df, keep, nam[nam %!iin% nam_rm], check = FALSE)
+  res <- ss(graph_df, keep, nam_keep, check = FALSE)
   if(verbose) cat("Aggregated", length(keep), "edges down to", g$N.groups, "edges\n")
-  res <- collap(res, g, ...)
-
-  if(reci == 2L && fnrow(res)) {
-    prev_fnrow <- length(keep)
-    while(prev_fnrow > (nrow_res <- fnrow(res))) {
-      prev_fnrow <- nrow_res
-      res <- consolidate_graph(res, directed = directed,
-                               drop.edges = drop.edges,
-                               consolidate = consolidate,
-                               keep.nodes = keep.nodes,
-                               recursive = recursive,
-                               verbose = verbose, ...)
-      if(length(attr(res, ".recursion.completed"))) {
-        break
-      }
-    }
-    attr(res, ".recursion.completed") <- NULL
-  }
-
-  if(verbose) {
-    cat("Final node counts:\n")
-    print(qtab(fcountv(c(res$from, res$to))$N, dnn = NULL))
-  }
-
-  if(any(nam_rm[3:6] %in% nam)) {
-    nodes <- nodes_from_graph(graph_df, sf = FALSE)
-    if(any(nam_rm[3:4] %in% nam)) res <- join(res, setNames(nodes, c("from", "FX", "FY")), on = "from", verbose = 0L) |> colorder(from, FX, FY)
-    if(any(nam_rm[5:6] %in% nam)) res <- join(res, setNames(nodes, c("to", "TX", "TY")), on = "to", verbose = 0L) |> colorder(to, TX, TY, pos = "after")
-  }
-  add_vars(res, pos = "front") <- list(line = seq_row(res))
+  res <- collap(res, g, keep.col.order = FALSE, ...)
   if(reci < 2L) {
     attr(res, "keep.edges") <- keep
     attr(res, "group.id") <- g$group.id
   }
   res
 }
+
 
 # Helper for consolidate_graph()
 compute_degrees <- function(from_vec, to_vec) {
