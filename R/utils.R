@@ -345,23 +345,24 @@ consolidate_graph <- function(graph_df, directed = FALSE,
   keep <- seq_row(graph_df) # Global variable tracking utilized edges
   gft <- get_vars(graph_df, c("from", "to")) |> unclass() # Local variable representing the current graph worked on
 
-  if(anyv(drop.edges, "loop") && any(loop <- gft$from == gft$to)) {
-    keep <- keep[!loop]
+  if(anyv(drop.edges, "loop") && length(loop <- gft$from %==% gft$to)) {
+    keep <- keep[-loop]
     gft <- ss(gft, keep, check = FALSE)
-    if(verbose) cat(sprintf("Dropped %d loop edges\n", sum(loop)))
+    if(verbose) cat(sprintf("Dropped %d loop edges\n", length(loop)))
   }
 
   if(anyv(drop.edges, "duplicate") && any(dup <- fduplicated(gft))) {
-    keep <- keep[!dup]
-    gft <- ss(gft, !dup)
     if(verbose) cat(sprintf("Dropped %d duplicate edges\n", sum(dup)))
+    dup <- whichv(dup, FALSE)
+    keep <- keep[dup]
+    gft <- ss(gft, dup, check = FALSE)
   }
 
   if(anyv(drop.edges, "single") && fnrow(gft)) {
     repeat {
-      nodes_rm <- unclass(fcountv(do.call(c, gft)))
+      nodes_rm <- unclass(fcountv(c(gft$from, gft$to)))
       if(!anyv(nodes_rm$N, 1L)) break
-      nodes_rm <- nodes_rm[[1L]][nodes_rm$N == 1L]
+      nodes_rm <- nodes_rm[[1L]][nodes_rm$N %==% 1L]
       if(length(keep.nodes)) nodes_rm <- nodes_rm[nodes_rm %!iin% keep.nodes]
       if(length(nodes_rm)) {
         ind <- which(gft$from %!in% nodes_rm & gft$to %!in% nodes_rm)
