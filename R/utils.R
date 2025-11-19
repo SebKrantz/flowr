@@ -453,15 +453,17 @@ consolidate_graph_core <- function(graph_df, directed = FALSE,
       nodes <- nodes[valid]
     }
     setv(gft$from, from_ind, NA, vind1 = TRUE) # gft$from[from_ind] <<- NA
+    to_ind_prev <- integer(0)
     repeat {
       setv(gid, from_ind, gid[to_ind], vind1 = TRUE) # gid[from_ind] <<- gid[to_ind]
       setv(gft$to, to_ind, gft$to[from_ind], vind1 = TRUE) # gft$to[to_ind] <<- gft$to[from_ind]
       to_ind <- fmatch(nodes, gft$to)
-      if(allNA(to_ind)) break
+      if(length(to_ind) == 0L || identical(to_ind, to_ind_prev) || allNA(to_ind)) break
       valid <- whichNA(to_ind, invert = TRUE)
       from_ind <- from_ind[valid]
       to_ind <- to_ind[valid]
       nodes <- nodes[valid]
+      to_ind_prev <- to_ind
     }
     ffirst(gft$from, gid, "fill", set = TRUE)
     TRUE
