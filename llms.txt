@@ -207,9 +207,8 @@ Run traffic assignment using path-sized logit model, including efficient
 built-in route choice algorithm.
 
 - [`run_assignment()`](https://sebkrantz.github.io/flowr/reference/run_assignment.md)
+  [`print(`*`<flowr>`*`)`](https://sebkrantz.github.io/flowr/reference/run_assignment.md)
   : Run Traffic Assignment
-- [`print(`*`<flowr>`*`)`](https://sebkrantz.github.io/flowr/reference/print.flowr.md)
-  : Print Flowr Object
 
 ## Graph Utilities
 

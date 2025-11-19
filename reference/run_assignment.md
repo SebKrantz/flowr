@@ -20,6 +20,9 @@ run_assignment(
   precompute.dmat = TRUE,
   verbose = TRUE
 )
+
+# S3 method for class 'flowr'
+print(x, ...)
 ```
 
 ## Arguments
@@ -55,7 +58,7 @@ run_assignment(
 
 - ...:
 
-  Currently not used.
+  Additional arguments (currently ignored).
 
 - detour.max:
 
@@ -84,6 +87,10 @@ run_assignment(
 - verbose:
 
   Show progress bar?
+
+- x:
+
+  An object of class `flowr`, typically returned by `run_assignment`.
 
 ## Value
 
