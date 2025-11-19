@@ -2,6 +2,7 @@
 % Please edit documentation in R/assignment.R
 \name{run_assignment}
 \alias{run_assignment}
+\alias{print.flowr}
 \title{Run Traffic Assignment}
 \usage{
 run_assignment(
@@ -18,6 +19,8 @@ run_assignment(
   precompute.dmat = TRUE,
   verbose = TRUE
 )
+
+\method{print}{flowr}(x, ...)
 }
 \arguments{
 \item{graph_df}{A data.frame with columns \code{from}, \code{to}, and optionally a cost column.
@@ -36,7 +39,7 @@ in \code{graph_df}, or a numeric vector of edge costs with length equal to \code
 
 \item{beta}{Numeric (default: -1). Path-sized logit parameter (beta_PSL).}
 
-\item{\dots}{Currently not used.}
+\item{\dots}{Additional arguments (currently ignored).}
 
 \item{detour.max}{Numeric (default: 1.5). Maximum detour factor for alternative routes (applied to shortest paths cost). This is a key parameter controlling the execution time of the algorithm: considering more routes (higher \code{detour.max}) substantially increases computation time.}
 
@@ -49,6 +52,8 @@ Use \code{"all"} to return all available extra results.}
 \item{precompute.dmat}{description}
 
 \item{verbose}{Show progress bar?}
+
+\item{x}{An object of class \code{flowr}, typically returned by \code{\link{run_assignment}}.}
 }
 \value{
 A list containing:

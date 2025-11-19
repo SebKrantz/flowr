@@ -12,7 +12,7 @@
 #' @param method Character string (default: "PSL"). Assignment method. Currently only "PSL"
 #'   (Path-Sized Logit) is implemented.
 #' @param beta Numeric (default: -1). Path-sized logit parameter (beta_PSL).
-#' @param \dots Currently not used.
+#' @param \dots Additional arguments (currently ignored).
 #' @param detour.max Numeric (default: 1.5). Maximum detour factor for alternative routes (applied to shortest paths cost). This is a key parameter controlling the execution time of the algorithm: considering more routes (higher \code{detour.max}) substantially increases computation time.
 #' @param angle.max Numeric (default: 90). Maximum detour angle (in degrees, two sided). I.e., nodes not within this angle measured against a straight line from origin to destination node will not be considered for detours.
 #' @param return.extra Character vector specifying additional results to return. Options include:
@@ -242,11 +242,9 @@ run_assignment <- function(graph_df, od_matrix_long,
   return(res)
 }
 
-#' @title Print Flowr Object
-#' @description Print method for objects of class \code{flowr}. Displays a summary of the flow assignment result.
+#' @rdname run_assignment
 #'
 #' @param x An object of class \code{flowr}, typically returned by \code{\link{run_assignment}}.
-#' @param ... Additional arguments (currently ignored).
 #'
 #' @export
 #' @importFrom collapse fmean fsd vlengths
