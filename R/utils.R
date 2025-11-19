@@ -452,10 +452,10 @@ consolidate_graph_core <- function(graph_df, directed = FALSE,
       to_ind <- to_ind[valid]
       nodes <- nodes[valid]
     }
-    gft$from[from_ind] <<- NA
+    setv(gft$from, from_ind, NA, vind1 = TRUE) # gft$from[from_ind] <<- NA
     repeat {
-      gid[from_ind] <<- gid[to_ind]
-      gft$to[to_ind] <<- gft$to[from_ind]
+      setv(gid, from_ind, gid[to_ind], vind1 = TRUE) # gid[from_ind] <<- gid[to_ind]
+      setv(gft$to, to_ind, gft$to[from_ind], vind1 = TRUE) # gft$to[to_ind] <<- gft$to[from_ind]
       to_ind <- fmatch(nodes, gft$to)
       if(allNA(to_ind)) break
       valid <- whichNA(to_ind, invert = TRUE)
@@ -469,19 +469,41 @@ consolidate_graph_core <- function(graph_df, directed = FALSE,
 
   orient_undirected_nodes <- function(nodes) {
     if(!length(nodes)) return(FALSE)
-    for(node in nodes) {
-      if(length(idx <- whichv(gft$from, node))) {
-        idx <- idx[2L]
-        tmp <- gft$from[idx]
-        gft$from[idx] <<- gft$to[idx]
-        gft$to[idx] <<- tmp
-      } else if(length(idx <- whichv(gft$to, node))) {
-        idx <- idx[2L]
-        tmp <- gft$to[idx]
-        gft$to[idx] <<- gft$from[idx]
-        gft$from[idx] <<- tmp
-      }
+    N <- length(gft$from)
+    Np <- N + 1L
+    Ninv <- N:1 # Not strictly necessary to take second match, but appears faster and catch more nodes...
+    idx_from <- Np - na_rm(fmatch(nodes, gft$from[Ninv]))
+    if(length(idx_from)) {
+      tmp_from <- gft$from[idx_from]
+      tmp_from_to <- gft$to[idx_from]
     }
+    idx_to <- Np - na_rm(fmatch(nodes, gft$to[Ninv]))
+    if(length(idx_to)) {
+      tmp_to <- gft$to[idx_to]
+      tmp_to_from <- gft$from[idx_to]
+    }
+    if(length(idx_from)) {
+      setv(gft$from, idx_from, tmp_from_to, vind1 = TRUE) # gft$from[idx_from] <<- tmp_from_to
+      setv(gft$to, idx_from, tmp_from, vind1 = TRUE) # gft$to[idx_from] <<- tmp_from
+    }
+    if(length(idx_to)) {
+      setv(gft$to, idx_to, tmp_to_from, vind1 = TRUE) # gft$to[idx_to] <<- tmp_to_from
+      setv(gft$from, idx_to, tmp_to, vind1 = TRUE)  # gft$from[idx_to] <<- tmp_to
+    }
+    # # Old slow (iterative) version
+    # for(node in nodes) {
+    #   if(length(idx <- whichv(gft$from, node))) {
+    #     idx <- idx[2L]
+    #     tmp <- gft$from[idx]
+    #     gft$from[idx] <<- gft$to[idx]
+    #     gft$to[idx] <<- tmp
+    #   } else if(length(idx <- whichv(gft$to, node))) {
+    #     idx <- idx[2L]
+    #     tmp <- gft$to[idx]
+    #     gft$to[idx] <<- gft$from[idx]
+    #     gft$from[idx] <<- tmp
+    #   }
+    # }
     TRUE
   }
 
@@ -518,7 +540,10 @@ consolidate_graph_core <- function(graph_df, directed = FALSE,
       if(!length(nodes)) break
       idx <- fmatch(nodes, degree_table$node)
       need_orientation <- nodes[degree_table$deg_from[idx] == 2L | degree_table$deg_to[idx] == 2L]
-      if(length(need_orientation)) if(!orient_undirected_nodes(need_orientation)) stop("Failed to orient undirected nodes for consolidation; please verify the input graph.")
+      if(length(need_orientation)) {
+        if(!orient_undirected_nodes(need_orientation)) stop("Failed to orient undirected nodes for consolidation; please verify the input graph.")
+        if(verbose) cat(sprintf("Oriented %d undirected intermediate nodes\n", length(need_orientation)))
+      }
     }
     if(!merge_linear_nodes(nodes)) stop("Failed to consolidate oriented undirected nodes; please verify the graph topology.")
     consolidated_any <- TRUE
