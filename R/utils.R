@@ -350,10 +350,6 @@ consolidate_graph <- function(graph_df, directed = FALSE,
   if(length(by)) {
     if(is.call(by)) by <- all.vars(by)
     if(!is.character(by)) stop("by needs to be a character vector or a formula of column names")
-    by_id <- groupv(get_vars(graph_df, by))
-    # We keep nodes where there are changes (e.g., dfferent mode).
-    keep.nodes <- funique.default(c(keep.nodes,
-      as.integer(names(which(fndistinct.default(c(by_id, by_id), c(graph_df$from, graph_df$to), na.rm = FALSE) > 1L)))))
   }
 
   if(length(attr(graph_df, "group.starts"))) attr(graph_df, "group.starts") <- NULL
@@ -388,6 +384,7 @@ consolidate_graph <- function(graph_df, directed = FALSE,
       res <- consolidate_graph_core(res, directed = directed,
                                     drop.edges = drop.edges,
                                     consolidate = consolidate,
+                                    by = by,
                                     keep.nodes = keep.nodes,
                                     reci = reci, nam_keep = nam_keep,
                                     verbose = verbose, ...)
@@ -423,6 +420,13 @@ consolidate_graph_core <- function(graph_df, directed = FALSE,
   keep <- seq_row(graph_df) # Global variable tracking utilized edges
   gft <- get_vars(graph_df, c("from", "to", by)) |> unclass() # Local variable representing the current graph worked on
 
+  if(length(by)) {
+    by_id <- groupv(get_vars(graph_df, by))
+    # We keep nodes where there are changes (e.g., different mode).
+    keep.nodes <- funique.default(c(keep.nodes,
+     as.integer(names(which(fndistinct.default(c(by_id, by_id), c(graph_df$from, graph_df$to), na.rm = FALSE) > 1L)))))
+  }
+
   if(anyv(drop.edges, "loop") && length(loop <- gft$from %==% gft$to)) {
     keep <- keep[-loop]
     gft <- ss(gft, keep, check = FALSE)
@@ -447,7 +451,7 @@ consolidate_graph_core <- function(graph_df, directed = FALSE,
         if(verbose) cat(sprintf("Dropped %d edges leading to singleton nodes\n", fnrow(gft) - length(ind)))
         keep <- keep[ind]
         gft <- ss(gft, ind, check = FALSE)
-      }
+      } else break
       if(reci == 0L) break
     }
   }
