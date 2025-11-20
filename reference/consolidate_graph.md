@@ -13,6 +13,7 @@ consolidate_graph(
   directed = FALSE,
   drop.edges = c("loop", "duplicate", "single"),
   consolidate = TRUE,
+  by = NULL,
   keep.nodes = NULL,
   ...,
   recursive = "full",
@@ -47,6 +48,13 @@ consolidate_graph(
   intermediate nodes (nodes that occur exactly twice) and merging
   connecting edges. If FALSE, only drops edges as specified in
   `drop.edges`.
+
+- by:
+
+  Link characteristics to preserve/not consolidate across, passed as a
+  one-sided formula or character vector of column names. Typically this
+  includes attributes like *mode*, *type*, or *capacity* to ensure that
+  only edges with the same characteristics are consolidated.
 
 - keep.nodes:
 
