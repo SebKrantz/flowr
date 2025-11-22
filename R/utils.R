@@ -270,7 +270,7 @@ normalize_graph <- function(graph_df) {
 
 
 #' @title Consolidate Graph
-#' @description Consolidate a graph by removing intermediate nodes (nodes that occur exactly twice) and optionally dropping loop, duplicate, and singleton edges. This simplifies the network topology while preserving connectivity.
+#' @description Consolidate a graph by removing intermediate nodes (nodes that occur exactly twice) and optionally dropping loop, duplicate, and singleton edges (leading to dead ends). This simplifies the network topology while preserving connectivity.
 #'
 #' @param graph_df A data frame representing a graph with columns:
 #'   \code{from} and \code{to} (node IDs), and optionally other columns to preserve.
