@@ -14,7 +14,7 @@ create_undirected_graph(graph_df, ...)
 - graph_df:
 
   A data frame representing a directed graph including columns: `from`,
-  `to`, and (optionally) `line`, `FX`, `FY`, `TX`, `TY`.
+  `to`, and (optionally) `edge`, `FX`, `FY`, `TX`, `TY`.
 
 - ...:
 
@@ -31,7 +31,7 @@ create_undirected_graph(graph_df, ...)
 
 A data frame representing an undirected graph with:
 
-- `line` - Line identifier (first value from duplicates)
+- `edge` - Edge identifier (first value from duplicates)
 
 - `from` - Starting node ID (normalized to be \< `to`)
 
@@ -55,7 +55,7 @@ This function converts a directed graph to an undirected graph by:
 
 - Collapsing duplicate edges (same `from` and `to` nodes)
 
-- For spatial/identifier columns (`line`, `FX`, `FY`, `TX`, `TY`),
+- For spatial/identifier columns (`edge`, `FX`, `FY`, `TX`, `TY`),
   taking the first value from duplicates
 
 - For aggregation columns,

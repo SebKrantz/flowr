@@ -2,8 +2,8 @@
 
 Consolidate a graph by removing intermediate nodes (nodes that occur
 exactly twice) and optionally dropping loop, duplicate, and singleton
-edges. This simplifies the network topology while preserving
-connectivity.
+edges (leading to dead ends). This simplifies the network topology while
+preserving connectivity.
 
 ## Usage
 
@@ -91,7 +91,7 @@ consolidate_graph(
 
 A data frame representing the consolidated graph with:
 
-- `line` - Line identifier (added as first column)
+- `edge` - Edge identifier (added as first column)
 
 - All columns from `graph_df` (aggregated if consolidation occurred),
   excluding `from`, `to`, and optionally `FX`, `FY`, `TX`, `TY` (which

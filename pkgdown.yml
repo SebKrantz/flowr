@@ -2,7 +2,7 @@ pandoc: 3.1.11
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles: {}
-last_built: 2025-11-20T22:18Z
+last_built: 2025-11-22T03:58Z
 urls:
   reference: https://sebkrantz.github.io/flowr/reference
   article: https://sebkrantz.github.io/flowr/articles

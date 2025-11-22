@@ -39,7 +39,7 @@ linestrings_to_graph(
 
 A data.frame representing the graph with columns:
 
-- `line` - Line identifier
+- `edge` - Edge identifier
 
 - `from` - Starting node ID
 

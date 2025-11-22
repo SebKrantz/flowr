@@ -50,7 +50,7 @@
 
 <dl><dt id="arg-graph-df">graph_df<a class="anchor" aria-label="anchor" href="#arg-graph-df"></a></dt>
 <dd><p>A data frame representing a directed graph including columns:
-<code>from</code>, <code>to</code>, and (optionally) <code>line</code>, <code>FX</code>, <code>FY</code>, <code>TX</code>, <code>TY</code>.</p></dd>
+<code>from</code>, <code>to</code>, and (optionally) <code>edge</code>, <code>FX</code>, <code>FY</code>, <code>TX</code>, <code>TY</code>.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -59,7 +59,7 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame representing an undirected graph with:</p><ul><li><p><code>line</code> - Line identifier (first value from duplicates)</p></li>
+    <p>A data frame representing an undirected graph with:</p><ul><li><p><code>edge</code> - Edge identifier (first value from duplicates)</p></li>
 <li><p><code>from</code> - Starting node ID (normalized to be &lt; <code>to</code>)</p></li>
 <li><p><code>to</code> - Ending node ID (normalized to be &gt; <code>from</code>)</p></li>
 <li><p><code>FX</code> - Starting node X-coordinate (first value from duplicates)</p></li>
@@ -72,7 +72,7 @@
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>This function converts a directed graph to an undirected graph by:</p><ul><li><p>Normalizing edge directions so that <code>from &lt; to</code> for all edges</p></li>
 <li><p>Collapsing duplicate edges (same <code>from</code> and <code>to</code> nodes)</p></li>
-<li><p>For spatial/identifier columns (<code>line</code>, <code>FX</code>, <code>FY</code>, <code>TX</code>, <code>TY</code>),
+<li><p>For spatial/identifier columns (<code>edge</code>, <code>FX</code>, <code>FY</code>, <code>TX</code>, <code>TY</code>),
     taking the first value from duplicates</p></li>
 <li><p>For aggregation columns, <code><a href="https://sebkrantz.github.io/collapse/reference/collap.html" class="external-link">collap()</a></code> will be applied.</p></li>
 </ul></div>
